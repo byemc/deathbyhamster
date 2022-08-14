@@ -4,18 +4,31 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Untitled Game 2022</title>
+    <title>Death by Hamster</title>
     <style>
         #gameCanvas {
             display: block;
             margin: auto;
+            width: 640px;
+            height: 480px;
+
+            /* display the canvas with crisp edges to avoid it looking blurry */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+
+
         }
     </style>
 </head>
 <body>
     
-    <canvas width="800" height="600" id="gameCanvas">
+    <canvas width="320" height="240" id="gameCanvas">
     </canvas>
+
+    <h2>Debug shit</h2>
+    <p>Mouse co-ords are x:<span id="mousePos"></span> </p>
 
     <script src="/game.js"></script>
 </body>
