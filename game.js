@@ -49,6 +49,10 @@ class Canvas {
         this.ctx.fillText(string, x, y);
     }
 
+    setFont(fontStack=fontStack, size="10") {
+        this.ctx.font = `${size}px ${fontStack}`
+    }
+
     drawLine(x1, y1, x2, y2, color) {
         this.ctx.strokeStyle = color;
         this.ctx.beginPath();
@@ -62,12 +66,15 @@ class Canvas {
 // Entity classes
 
 class Hamster {
-    constructor(name="", x=0, y=0) {
+    constructor(name="", trueX=0, trueY=0) {
         this.name = name;
-        this.x = x;
-        this.y = y;
         this.velocity = {x: 1, y: 0};
         this.maxVelocity = {x: 2, y: 2};
+        this.trueX = trueX
+        this.trueY = trueY
+        this.x = Math.round(this.trueX);
+        this.y = Math.round(this.trueY);
+
 
         this.aim = {x: 0, y: 0};
 
@@ -76,8 +83,10 @@ class Hamster {
     // collision detection
 
     update() {
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
+        this.trueX += this.velocity.x;
+        this.trueY += this.velocity.y;
+        this.x = Math.round(this.trueX);
+        this.y = Math.round(this.trueY);
         // decrease velocity
         this.velocity.x *= 0.9;
         this.velocity.y *= 0.9;
@@ -110,6 +119,7 @@ class Hamster {
     draw(canvas) {
         canvas.drawRect(this.x, this.y, 20, 20, "red");
         // draw the name above the hamster
+        
         canvas.drawText(this.name, this.x, this.y - 10, "white");
     }
 }
@@ -162,6 +172,7 @@ if (canvas.ctx == null) {
 }
 gameCtx = canvas.ctx;
 canvas.fill("#1c1c1c");
+canvas.setFont(fontStack);
 
 // Game init
 var player = new Hamster("Player", canvas.width/2, canvas.height/2);
@@ -171,11 +182,11 @@ player.draw(canvas);
 
 // THe input checker-inator
 /* Here's how it works:
-    If a keydown is detected, the key preforms it's action
+If a keydown is detected, the key preforms it's action
     If it doesn't get unpressed in the tick, keep the velocity at the max
-*/
-var keys = {};
-document.addEventListener('keydown', function(e) {
+    */
+   var keys = {};
+   document.addEventListener('keydown', function(e) {
     keys[e.code] = true;
 } );
 document.addEventListener('keyup', function(e) {
@@ -199,17 +210,19 @@ var gameStart = false;
 
 // game loop
 var gameLoop = setInterval(() => {
-
+    
+    canvas.fill("#1c1c1c");
+    canvas.drawText(frames, 10, 10, "red");
+    frames++;
+    
+    
     if (frames > 30) {
         gameStart = true;
-    } else {
-        frames++;
     }
 
     if (gameStart) {
 
         // log("debug", "Tick!");
-        canvas.fill("#1c1c1c");
 
         // input checker
         if (keys["ArrowUp"]) {
