@@ -14,12 +14,6 @@ const fontStack = '"Comic Sans MS"';
 var bullets = [];
 var hitboxes = [];
 
-// this is the canvas check
-var supportsCanvas = !!document.createElement("gameCanvas").getContext;
-
-if (!supportsCanvas) {
-    alert("Your browser does not support the canvas element. Please update your browser to the latest version.");
-}
 class Canvas {
     constructor(id) {
         this.canvas = document.getElementById(id);
@@ -28,10 +22,11 @@ class Canvas {
         this.height = this.canvas.height;
         this.realWidth = 640;
         this.realHeight = 480;
+        this.camera = {x: 0, y: 0};
 
         this.mousePos = {x: 0, y: 0};
+        this.realMousePos = {x: 0, y: 0};
 
-        this.camera = {x: 0, y: 0};
     }
 
     fill(color) {
@@ -42,8 +37,8 @@ class Canvas {
     // Mouse position crap
     getMousePos(e) {
         let rect = this.canvas.getBoundingClientRect();
-        this.mousePos.x = (e.clientX - rect.left) / 2;
-        this.mousePos.y = (e.clientY - rect.top) /2;
+        this.mousePos.x = ((e.clientX - rect.left) / 2) + this.camera.x;
+        this.mousePos.y = ((e.clientY - rect.top) /2) + this.camera.y;
 
         document.getElementById('mousePos').innerHTML = `${this.mousePos.x}, ${this.mousePos.y}`;
     }
@@ -56,6 +51,11 @@ class Canvas {
     drawRect(x, y, w, h, color) {
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x-this.camera.x, y-this.camera.y, w, h);
+    }
+
+    strokeRect(x, y, w, h, color) {
+        this.ctx.strokeStyle = color;
+        this.ctx.strokeRect(x-this.camera.x, y-this.camera.y, w, h);
     }
 
     drawText(string, x, y, color) {
@@ -109,6 +109,11 @@ class Hitbox {
             }
         return false;
     }
+
+    draw() {
+        // draw the hitbox
+        canvas.strokeRect(this.x, this.y, this.w, this.h, 'green');
+    }
 }
 
 class Hamster { // Player class
@@ -141,10 +146,36 @@ class Hamster { // Player class
         this.aim.y = canvas.mousePos.y;
 
         // calculate the angle between the hamster and the mouse
-        this.aim.angle = Math.atan2(this.aim.y - this.y - 10, this.aim.x - this.x - 10);    
+        this.aim.angle = Math.atan2(this.aim.y - this.trueY - 10, this.aim.x - this.trueX - 10);    
         
         document.getElementById('truexy').innerText = `${this.trueX}, ${this.trueY}`;
         document.getElementById('hamxy').innerText = `${this.x}, ${this.y}`;
+
+        if (this.y < 10) {
+            // move the camera up enough to keep the hamster in view, if the hamster is moving up
+            if (this.velocity.y < 0) {
+                canvas.mvCamera(0, this.velocity.y*1.1);
+            }
+            
+        }
+        if (this.y > 210) {
+            if(this.velocity.y > 0) {
+                canvas.mvCamera(0, this.velocity.y*1.1);
+            }
+        }
+        if (this.x < 10) {
+            if(this.velocity.x < 0) {
+                canvas.mvCamera(this.velocity.x*1.1, 0);
+            }
+        }
+        if (this.x > 290) {
+            if(this.velocity.x > 0) {
+                canvas.mvCamera(this.velocity.x*1.1, 0);
+            }
+        }
+
+
+
 
     }
 
@@ -160,18 +191,15 @@ class Hamster { // Player class
     }
 
     draw(canvas) {
-        canvas.drawRect(this.x, this.y, 20, 20, "red");
+        canvas.drawRect(this.trueX, this.trueY, 20, 20, "red");
         // draw the name above the hamster
         
-        canvas.drawText(this.name, this.x, this.y - 10, "white");
-
-        // draw a regtangle pointing at the aim, centered on the middle of the hamster
-        canvas.drawLine(this.x + 10, this.y + 10, this.x + 10 + Math.cos(this.aim.angle) * 10, this.y + 10 + Math.sin(this.aim.angle) * 10, "white");
+        canvas.drawText(this.name, this.trueX, this.trueY - 10, "white");
     }
 
     shoot(e) {
-        // shoot to the mouse position from the hamster, with a velocity of 1
-        let bullet = new Bullet(this.x + 10, this.y + 10, this.aim.angle, 0.1);
+        // spawn a bullet pointing at the aim
+        let bullet = new Bullet(this.aim.angle, this.trueX + 10, this.trueY + 10, 10);
         bullets.push(bullet);
     }
 }
@@ -224,23 +252,30 @@ class Human {
         this.x = this.trueX - canvas.camera.x;
         this.y = this.trueY - canvas.camera.y;
 
+        this.hitbox.x = this.x;
+        this.hitbox.y = this.y;
+
 
     }
 
     draw(canvas) {
-        canvas.drawRect(this.x, this.y, 20, 20, "blue");
-        canvas.drawText(`human${this.humanID}`, this.x, this.y - 10, "white");
+        canvas.drawRect(this.trueX, this.trueY, 20, 20, "blue");
+        canvas.drawText(`human${this.humanID}`, this.trueX, this.trueY - 10, "white");
+
+        // draw the hitbox
+        this.hitbox.draw(canvas);
     }
 
     die() {
         // remove the hitbox from the hitboxes array
         hitboxes.splice(hitboxes.indexOf(this.hitbox), 1);
+        console.debug(`Human ${this.humanID} died, removing ${this.hitbox}`);
         // remove the human from the humans array
         humans.splice(humans.indexOf(this), 1);
 
         canvas.setFont("Arial", "20");
         canvas.ctx.textAliign = "center";
-        canvas.drawText("Kill!", this.x, this.y, "red");
+        canvas.drawText("Kill!", this.trueX, this.trueY, "red");
         canvas.setFont(fontStack);
     }
 }
@@ -250,8 +285,6 @@ class Bullet {
         this.direction = direction;
         this.trueX = x;
         this.trueY = y;
-        this.x = x - canvas.camera.x;
-        this.y = y - canvas.camera.y;
         this.velocity = velocity;
 
         this.hitbox = new Hitbox(this.x, this.y, 10, 10, "bullet");
@@ -273,10 +306,14 @@ class Bullet {
             if (this.hitbox.collides(hitboxes[i])) {
                 // if the bullet has collided with a hitbox, remove the bullet and the hitbox
                 bullets.splice(bullets.indexOf(this), 1);
+
+                console.log(`Bullet ${this.hitbox.owner} collided with ${hitboxes[i].owner}`);
+                console.log(`Removing ${hitboxes[i]}`);
+                console.log(hitboxes[i])
                 
                 // find the human by the hitbox ID and remove it from the humans array with the Die function
                 for (let j = 0; j < humans.length; j++) {
-                    if (humans[j].hitbox.id == hitboxes[i].id) {
+                    if (humans[j].hitbox.owner == hitboxes[i].owner) {
                         humans[j].die();
                     }
                 }
@@ -287,7 +324,10 @@ class Bullet {
 
     draw(canvas) {
         // draw a rectangle with a size of 2x3 at the position of the bullet, pointing in the direction of the angle
-        canvas.drawRect(this.trueX, this.trueX, 2, 3, "white");
+        canvas.drawRect(this.trueX, this.trueY, 2, 3, "white");
+
+        // DEBUG: draw the bullet's position
+        canvas.drawText(`${Math.round(this.trueX)}, ${Math.round(this.trueY)}`, this.trueX, this.trueY - 10, "white");
     }
 }
 
@@ -325,7 +365,7 @@ document.addEventListener('keyup', function(e) {
 
 // On a mouse move, update the mouse position
 canvas.canvas.addEventListener('mousemove', function(e) {
-    mousePos = canvas.getMousePos(e);
+    canvas.getMousePos(e);
 } );
 
 canvas.canvas.addEventListener('mousedown', function(e) {
@@ -339,6 +379,9 @@ for (var i = 0; i < 5; i++) {
     humans.push(human);
 }
 
+const hitviewthingimg = new Image();
+hitviewthingimg.src = "./assets/aimerthing.png";
+
 // wait for 30 frames before starting the game
 var frames = 0;
 var gameStart = false;
@@ -347,7 +390,7 @@ var gameStart = false;
 var gameLoop = setInterval(() => {
     
     canvas.fill("#1c1c1c");
-    canvas.drawText(frames, 10, 10, "red");
+    canvas.drawText(frames, 10-canvas.camera.x, 10-canvas.camera.y, "red");
     frames++;
     
     
@@ -387,6 +430,8 @@ var gameLoop = setInterval(() => {
 
         player.update();
 
+
+
         // update humans
         for (var i = 0; i < humans.length; i++) {
             humans[i].update();
@@ -400,22 +445,25 @@ var gameLoop = setInterval(() => {
 
         // draw bullets
         for (var i = 0; i < bullets.length; i++) {
-            bullets[i].update();
             bullets[i].draw(canvas);
+            bullets[i].update();
         }
+
+        canvas.drawImg(hitviewthingimg, player.aim.x - 8, player.aim.y - 8, 16, 16);
+        
 
         document.getElementById("dbg_camera").innerText = `x: ${canvas.camera.x}, y: ${canvas.camera.y}`;
 
-        // check if a bullet has collided with a human
-        for (var i = 0; i < bullets.length; i++) {
-            for (var j = 0; j < humans.length; j++) {
-                if (bullets[i].hitbox.collides(humans[j].hitbox)) {
-                    // if the bullet has collided with a human, remove the bullet and the human
-                    bullets.splice(bullets.indexOf(bullets[i]), 1);
-                    humans.splice(humans.indexOf(humans[j]), 1);
-                }
-            }
-        }
+        // // check if a bullet has collided with a human
+        // for (var i = 0; i < bullets.length; i++) {
+        //     for (var j = 0; j < humans.length; j++) {
+        //         if (bullets[i].hitbox.collides(humans[j].hitbox)) {
+        //             // if the bullet has collided with a human, remove the bullet and the human
+        //             bullets.splice(bullets.indexOf(bullets[i]), 1);
+        //             humans.splice(humans.indexOf(humans[j]), 1);
+        //         }
+        //     }
+        // }
 
 }
-} , 1000/60);
+} , 1000/60); // 60 fps
