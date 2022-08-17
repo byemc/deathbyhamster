@@ -47,6 +47,9 @@ class Canvas {
     drawImg(img, x, y, w, h) {
         this.ctx.drawImage(img, x-this.camera.x, y-this.camera.y, w, h);
     }
+    drawImage(img, x, y, w, h) {
+        this.drawImg(img, x, y, w, h);
+    }
 
     drawRect(x, y, w, h, color) {
         this.ctx.fillStyle = color;
@@ -58,8 +61,9 @@ class Canvas {
         this.ctx.strokeRect(x-this.camera.x, y-this.camera.y, w, h);
     }
 
-    drawText(string, x, y, color) {
+    drawText(string, x, y, color, align="start") {
         this.ctx.fillStyle = color;
+        this.ctx.textAlign = align;
         this.ctx.fillText(string, x-this.camera.x, y-this.camera.y);
     }
 
@@ -76,12 +80,12 @@ class Canvas {
     }
 
     // Camera stuff
-    mvCamera(x, y) {
+    mvCamera(x, y, s) {
         this.camera.x += x;
         this.camera.y += y;
     }
 
-    setCamera(x, y) {
+    setCamera(x, y, s=1) {
         this.camera.x = x;
         this.camera.y = y;
     }
@@ -119,7 +123,7 @@ class Hitbox {
 class Hamster { // Player class
     constructor(name="", trueX=0, trueY=0) {
         this.name = name;
-        this.velocity = {x: 1, y: 0};
+        this.velocity = {x: 0, y: 0};
         this.maxVelocity = {x: 2, y: 2};
         this.trueX = trueX
         this.trueY = trueY
@@ -127,6 +131,12 @@ class Hamster { // Player class
         this.x = this.trueX - canvas.camera.x;
         this.y = this.trueY - canvas.camera.y;
         this.aim = {x: 0, y: 0};
+
+        this.sprite = new Image();
+        this.sprite.src = "";
+
+        this.w = 20; // this'll change depending on the sprite's width
+        this.h = 20; // this'll change depending on the sprite's height
 
     }
 
@@ -151,28 +161,31 @@ class Hamster { // Player class
         document.getElementById('truexy').innerText = `${this.trueX}, ${this.trueY}`;
         document.getElementById('hamxy').innerText = `${this.x}, ${this.y}`;
 
-        if (this.y < 10) {
-            // move the camera up enough to keep the hamster in view, if the hamster is moving up
-            if (this.velocity.y < 0) {
-                canvas.mvCamera(0, this.velocity.y*1.1);
-            }
+        // if (this.y < 10) {
+        //     // move the camera up enough to keep the hamster in view, if the hamster is moving up
+        //     if (this.velocity.y < 0) {
+        //         canvas.mvCamera(0, this.velocity.y*1.1);
+        //     }
             
-        }
-        if (this.y > 210) {
-            if(this.velocity.y > 0) {
-                canvas.mvCamera(0, this.velocity.y*1.1);
-            }
-        }
-        if (this.x < 10) {
-            if(this.velocity.x < 0) {
-                canvas.mvCamera(this.velocity.x*1.1, 0);
-            }
-        }
-        if (this.x > 290) {
-            if(this.velocity.x > 0) {
-                canvas.mvCamera(this.velocity.x*1.1, 0);
-            }
-        }
+        // }
+        // if (this.y > 210) {
+        //     if(this.velocity.y > 0) {
+        //         canvas.mvCamera(0, this.velocity.y*1.1);
+        //     }
+        // }
+        // if (this.x < 10) {
+        //     if(this.velocity.x < 0) {
+        //         canvas.mvCamera(this.velocity.x*1.1, 0);
+        //     }
+        // }
+        // if (this.x > 290) {
+        //     if(this.velocity.x > 0) {
+        //         canvas.mvCamera(this.velocity.x*1.1, 0);
+        //     }
+        // }
+
+        // center the camera on the hamster
+        canvas.setCamera(this.trueX - canvas.width/2, this.trueY - canvas.height/2);
 
 
 
@@ -199,7 +212,7 @@ class Hamster { // Player class
 
     shoot(e) {
         // spawn a bullet pointing at the aim
-        let bullet = new Bullet(this.aim.angle, this.trueX + 10, this.trueY + 10, 10);
+        let bullet = new Bullet(this.aim.angle, this.trueX + 10, this.trueY + 10, 50);
         bullets.push(bullet);
     }
 }
@@ -274,8 +287,7 @@ class Human {
         humans.splice(humans.indexOf(this), 1);
 
         canvas.setFont("Arial", "20");
-        canvas.ctx.textAliign = "center";
-        canvas.drawText("Kill!", this.trueX, this.trueY, "red");
+        canvas.drawText("Kill!", this.trueX, this.trueY, "red", "center");
         canvas.setFont(fontStack);
     }
 }
@@ -285,7 +297,7 @@ class Bullet {
         this.direction = direction;
         this.trueX = x;
         this.trueY = y;
-        this.velocity = velocity;
+        this.velocity = velocity/10;
 
         this.hitbox = new Hitbox(this.x, this.y, 10, 10, "bullet");
     }
@@ -343,12 +355,71 @@ gameCtx = canvas.ctx;
 canvas.fill("#1c1c1c");
 canvas.setFont(fontStack);
 gameCtx.imageSmoothingEnabled = false;
+var gameStart = false;
+
+canvas.setFont("Rubik", "20");
+canvas.drawText("Death By Hamster", canvas.width / 2, canvas.height / 2 - 40, "white", "center");
+canvas.setFont(fontStack);
+
+// Load images
+var images = {
+    "mouse": {
+        "ingame": "./assets/aimerthing.png",
+    },
+    "background": {
+        "ingame": "./assets/crazyabackground_a.png",
+    }
+};
+
+let loadedImages = 0;
+let totalImages = 0;
+
+// count the total number of images to load
+for (let key in images) {
+    for (let subkey in images[key]) {
+        totalImages++;
+    }
+}
+
+canvas.drawText(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+
+canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
+canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+
+
+// after all images are loaded, and no errors occured, start the game
+for (var key in images) {
+    for (var subkey in images[key]) {
+
+        // attempt to load the image
+        var IMG = new Image();
+        IMG.addEventListener('load', () => {
+            loadedImages++;
+            canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+            if (loadedImages == totalImages) {
+                gameStart = true;
+                canvas.drawText(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+            }
+        });
+        IMG.addEventListener('error', () => {
+            canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
+            canvas.drawText(`Error loading image ${images[key][subkey]}`, canvas.width / 2, canvas.height / 2 + 45, "red    ", "center");
+        } );
+        IMG.src = images[key][subkey];
+
+        // add the image to the images object
+        images[key][subkey] = IMG;
+        
+        // draw the loading text by drawing a rectangle over the previous text, and drawing the new text
+        canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
+        canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+        
+    }
+}
 
 // Game init
 var player = new Hamster("Player", canvas.width/2, canvas.height/2);
 var humans = [];
-
-player.draw(canvas);
 
 // THe input checker-inator
 /* Here's how it works:
@@ -379,26 +450,20 @@ for (var i = 0; i < 5; i++) {
     humans.push(human);
 }
 
-const hitviewthingimg = new Image();
-hitviewthingimg.src = "./assets/aimerthing.png";
-
 // wait for 30 frames before starting the game
 var frames = 0;
-var gameStart = false;
+
+let kills = 0;
+let target = 5;
 
 // game loop
 var gameLoop = setInterval(() => {
     
-    canvas.fill("#1c1c1c");
-    canvas.drawText(frames, 10-canvas.camera.x, 10-canvas.camera.y, "red");
-    frames++;
-    
-    
-    if (frames > 30) {
-        gameStart = true;
-    }
-
     if (gameStart) {
+        canvas.fill("#1c1c1c");
+        canvas.drawText(frames, 10-canvas.camera.x, 10-canvas.camera.y, "red");
+        frames++;
+
 
         // log("debug", "Tick!");
 
@@ -437,6 +502,9 @@ var gameLoop = setInterval(() => {
             humans[i].update();
         }
 
+        // draw the background
+        // canvas.drawImage(images.background.ingame, 0, 0, canvas.width, canvas.height);
+
         // draw humans
         for (var i = 0; i < humans.length; i++) {
             humans[i].draw(canvas);
@@ -446,10 +514,18 @@ var gameLoop = setInterval(() => {
         // draw bullets
         for (var i = 0; i < bullets.length; i++) {
             bullets[i].draw(canvas);
-            bullets[i].update();
+            // run the update 10 times per tick
+            for (var j = 0; j < 10; j++) {
+                try {
+                    bullets[i].update();
+                }
+                catch (e) {
+                    break;
+                }
+            }
         }
 
-        canvas.drawImg(hitviewthingimg, player.aim.x - 8, player.aim.y - 8, 16, 16);
+        canvas.drawImg(images.mouse.ingame, player.aim.x - 8, player.aim.y - 8, 16, 16);
         
 
         document.getElementById("dbg_camera").innerText = `x: ${canvas.camera.x}, y: ${canvas.camera.y}`;
@@ -464,6 +540,11 @@ var gameLoop = setInterval(() => {
         //         }
         //     }
         // }
+
+        if (kills == target) {
+            gameStart = false;
+            canvas.drawText(`You win!`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+        }
 
 }
 } , 1000/60); // 60 fps

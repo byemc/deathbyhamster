@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font maker</title>
+    <style>
+        input[type="checkbox"] {
+            all: unset;
+            display: inline-block;
+            border: 1px solid #ccc;
+            width: 20px;
+            height: 20px;
+
+            /* No padding */
+            padding: 0;
+            margin: 0;
+            vertical-align: middle;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: rgb(0, 0, 0);
+        }
+
+        input[type="checkbox"]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="inputbox">
+        <!-- 16x16 grid of checkboxes -->
+    </div>
+
+    <pre id="output">
+
+    </pre>
+
+    <canvas id="renderedOutput">
+        Your browser doesn't support canvas.
+    </canvas>
+
+    <script>
+        var drawing = document.getElementById("inputbox");
+        var routput = document.getElementById("renderedOutput");
+        var ctx = routput.getContext("2d");
+
+        chkNum = 0;
+
+        for (var i = 0; i < 8; i++) {
+            for (var j = 0; j < 8; j++) {
+                var checkbox = document.createElement("input");
+                chkNum++;
+                checkbox.type = "checkbox";
+                checkbox.id = chkNum;
+                checkbox.addEventListener("change", function() {
+                    updateOutput();
+                });
+                drawing.appendChild(checkbox);
+            }
+            drawing.appendChild(document.createElement("br"));
+        }
+
+        var output = document.getElementById("output");
+        var outputText = "";
+        var listOfBoxes = [];
+
+        var updateOutput = () => {
+            listOfBoxes = [];
+            for (var i = 1; i <= chkNum; i++) {
+                if (document.getElementById(i).checked) {
+                    listOfBoxes.push(true);
+                } else {
+                    listOfBoxes.push(false);
+                }
+            }
+
+            // print the array as is, with newlines after each 16 elements
+            outputText = "const yourChar = [\n\n   ";
+            for (var i = 0; i < listOfBoxes.length; i++) {
+                outputText += `${listOfBoxes[i]}, `;
+                if (i % 8 == 7) {
+                    outputText += "\n   ";
+                }
+            }
+            outputText += "\n];";
+            output.innerHTML = outputText;
+
+            // render the array as a character on the canvas
+            ctx.clearRect(0, 0, routput.width, routput.height);
+            for (var i = 0; i < listOfBoxes.length; i++) {
+                if (listOfBoxes[i]) {
+                    ctx.fillRect(i % 8 * 16, Math.floor(i / 8) * 16, 16, 16);
+                }
+            }
+
+        }
+
+        updateOutput();
+
+
+    </script>
+
+</body>
+</html>
