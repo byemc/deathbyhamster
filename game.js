@@ -51,7 +51,7 @@ class Canvas {
         this.drawImg(img, x, y, w, h);
     }
 
-    drawRect(x, y, w, h, color) {
+    drawRect(x, y, w, h, color="white") {
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x-this.camera.x, y-this.camera.y, w, h);
     }
@@ -61,10 +61,72 @@ class Canvas {
         this.ctx.strokeRect(x-this.camera.x, y-this.camera.y, w, h);
     }
 
-    drawText(string, x, y, color, align="start") {
+    drawFont(string, x, y, color, align="start") {
         this.ctx.fillStyle = color;
         this.ctx.textAlign = align;
         this.ctx.fillText(string, x-this.camera.x, y-this.camera.y);
+    }
+
+    drawText(string, x, y, scaley, scalex, color, align="start") {
+
+        // console.log(string)
+
+        string = string.toUpperCase();
+        let chars = string.split("");
+        console.log(chars);
+        
+        let charWidth = 7
+        let strLength = (chars.length * charWidth) * scalex; 
+
+        switch(align) {
+            case "start":
+            case "left":
+                x = x;
+                break;
+            case "center":
+            case "middle":
+                x = x - strLength/2;
+                break;
+            case "end":
+            case "right":
+                x = x - strLength;
+                break;
+        }
+
+        
+        let charI = 0;
+        
+        for (let char of chars) {
+            
+            this.ctx.fillStyle = color;
+            let row = 0;
+            let col = 0;
+            // offset is the amount of pixels to offset the character by. you can calculate this by multiplying the current character (they're all the same size) by the scalex and scaley
+            let offset = (7 * scalex);
+
+            char = fIndex[char];
+            if (char == undefined) {
+                // leave a blank space
+            } else {
+                for (let cRow in char) {
+                    col = 0;
+                    // for each pixel in the row
+                    for (let c of char[cRow]) {
+                        if (c == 1) {
+                            this.ctx.fillRect(x + (col * scalex) + (charI * offset), y + (row * scaley), scalex, scaley);
+
+                        }
+                        col++;
+                    }
+                    row++;
+                }
+            }
+
+            charI++;
+            console.log(charI)
+
+        }
+
     }
 
     setFont(fontStack=fontStack, size="10") {
@@ -116,7 +178,7 @@ class Hitbox {
 
     draw() {
         // draw the hitbox
-        canvas.strokeRect(this.x, this.y, this.w, this.h, 'green');
+        canvas.strokeRect(this.x+canvas.camera, this.y, this.w, this.h, 'green');
     }
 }
 
@@ -207,7 +269,7 @@ class Hamster { // Player class
         canvas.drawRect(this.trueX, this.trueY, 20, 20, "red");
         // draw the name above the hamster
         
-        canvas.drawText(this.name, this.trueX, this.trueY - 10, "white");
+        canvas.drawFont(this.name, this.trueX, this.trueY - 10, "white");
     }
 
     shoot(e) {
@@ -273,7 +335,7 @@ class Human {
 
     draw(canvas) {
         canvas.drawRect(this.trueX, this.trueY, 20, 20, "blue");
-        canvas.drawText(`human${this.humanID}`, this.trueX, this.trueY - 10, "white");
+        canvas.drawText(`human${this.humanID}`, this.trueX, this.trueY - 10, 1,1, "white");
 
         // draw the hitbox
         this.hitbox.draw(canvas);
@@ -287,7 +349,7 @@ class Human {
         humans.splice(humans.indexOf(this), 1);
 
         canvas.setFont("Arial", "20");
-        canvas.drawText("Kill!", this.trueX, this.trueY, "red", "center");
+        canvas.drawFont("Kill!", this.trueX, this.trueY, "red", "center");
         canvas.setFont(fontStack);
     }
 }
@@ -339,17 +401,18 @@ class Bullet {
         canvas.drawRect(this.trueX, this.trueY, 2, 3, "white");
 
         // DEBUG: draw the bullet's position
-        canvas.drawText(`${Math.round(this.trueX)}, ${Math.round(this.trueY)}`, this.trueX, this.trueY - 10, "white");
+        canvas.drawFont(`${Math.round(this.trueX)}, ${Math.round(this.trueY)}`, this.trueX, this.trueY - 10, "white");
     }
 }
 
 
 
 // INIT CANVAS
+var fIndex = fntINDEX;
 var canvas = new Canvas('gameCanvas');
-if (canvas.ctx == null) {
-    log('ERROR', 'Could not initialize canvas');
-    alert('Your browser doesn\'t support canvas. Most modern browsers support it, so please upgrade to IE 9 or newer.');
+// check if the canvas is supported
+if(!canvas.ctx) {
+    alert("Your browser does not support the canvas element");
 }
 gameCtx = canvas.ctx;
 canvas.fill("#1c1c1c");
@@ -357,8 +420,8 @@ canvas.setFont(fontStack);
 gameCtx.imageSmoothingEnabled = false;
 var gameStart = false;
 
-canvas.setFont("Rubik", "20");
-canvas.drawText("Death By Hamster", canvas.width / 2, canvas.height / 2 - 40, "white", "center");
+canvas.setFont(fontStack, "20");
+canvas.drawText("Death By Hamster", canvas.width / 2, canvas.height / 2 - 40, 2, 2, "white", "middle");
 canvas.setFont(fontStack);
 
 // Load images
@@ -371,6 +434,8 @@ var images = {
     }
 };
 
+
+
 let loadedImages = 0;
 let totalImages = 0;
 
@@ -381,10 +446,10 @@ for (let key in images) {
     }
 }
 
-canvas.drawText(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+canvas.drawText(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, 1,1, "white", "center");
 
 canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, 1 ,1, "white", "center");
 
 
 // after all images are loaded, and no errors occured, start the game
@@ -395,15 +460,16 @@ for (var key in images) {
         var IMG = new Image();
         IMG.addEventListener('load', () => {
             loadedImages++;
-            canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+            canvas.drawFont(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
             if (loadedImages == totalImages) {
                 gameStart = true;
-                canvas.drawText(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+                canvas.drawFont(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
             }
         });
         IMG.addEventListener('error', () => {
+            gameStart = false;
             canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-            canvas.drawText(`Error loading image ${images[key][subkey]}`, canvas.width / 2, canvas.height / 2 + 45, "red    ", "center");
+            canvas.drawFont(`Error loading image ${images[key][subkey]}`, canvas.width / 2, canvas.height / 2 + 45, "red    ", "center");
         } );
         IMG.src = images[key][subkey];
 
@@ -412,10 +478,12 @@ for (var key in images) {
         
         // draw the loading text by drawing a rectangle over the previous text, and drawing the new text
         canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-        canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+        canvas.drawFont(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
         
     }
 }
+
+
 
 // Game init
 var player = new Hamster("Player", canvas.width/2, canvas.height/2);
@@ -461,8 +529,8 @@ var gameLoop = setInterval(() => {
     
     if (gameStart) {
         canvas.fill("#1c1c1c");
-        canvas.drawText(frames, 10-canvas.camera.x, 10-canvas.camera.y, "red");
         frames++;
+        canvas.drawText("Text", 10-canvas.camera.x, 10-canvas.camera.y, 5,5, "white");
 
 
         // log("debug", "Tick!");
@@ -543,7 +611,7 @@ var gameLoop = setInterval(() => {
 
         if (kills == target) {
             gameStart = false;
-            canvas.drawText(`You win!`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+            canvas.drawFont(`You win!`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
         }
 
 }
