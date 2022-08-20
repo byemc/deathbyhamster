@@ -67,16 +67,21 @@ class Canvas {
         this.ctx.fillText(string, x-this.camera.x, y-this.camera.y);
     }
 
-    drawText(string, x, y, scaley, scalex, color, align="start") {
+    drawText(string, x, y, scaley, scalex, color, align="start", vAliign="top", ops={}) {
+
+        // console.log(ops);
 
         // console.log(string)
 
         string = string.toUpperCase();
         let chars = string.split("");
-        console.log(chars);
+        // console.log(chars);
         
-        let charWidth = 7
+        let charWidth = 6
         let strLength = (chars.length * charWidth) * scalex; 
+
+        let charHeight = 7
+        let strHeight = (charHeight * scaley);
 
         switch(align) {
             case "start":
@@ -92,9 +97,23 @@ class Canvas {
                 x = x - strLength;
                 break;
         }
+        switch(vAliign) {
+            case "top":
+                y = y;
+                break;
+            case "middle":
+            case "center":
+                y = y - strHeight/2;
+                break;
+            case "bottom":
+                y = y - strHeight;
+                break;
+        }
 
         
         let charI = 0;
+        let nextOffset = (7 * scalex);
+        let lastWasFull = false;
         
         for (let char of chars) {
             
@@ -102,7 +121,17 @@ class Canvas {
             let row = 0;
             let col = 0;
             // offset is the amount of pixels to offset the character by. you can calculate this by multiplying the current character (they're all the same size) by the scalex and scaley
-            let offset = (7 * scalex);
+            let offset = nextOffset;
+
+            if (lastWasFull) {
+                offset -= (0.5 * scalex);
+            }
+            
+            if(ops.shortFullStop) {
+                if(char == ".") {
+                    lastWasFull = true;
+                }
+            }
 
             char = fIndex[char];
             if (char == undefined) {
@@ -113,7 +142,7 @@ class Canvas {
                     // for each pixel in the row
                     for (let c of char[cRow]) {
                         if (c == 1) {
-                            this.ctx.fillRect(x + (col * scalex) + (charI * offset), y + (row * scaley), scalex, scaley);
+                            this.ctx.fillRect((x + (col * scalex) + (charI * offset)) - this.camera.x,( y + (row * scaley)) - this.camera.y, scalex, scaley);
 
                         }
                         col++;
@@ -123,7 +152,9 @@ class Canvas {
             }
 
             charI++;
-            console.log(charI)
+            // console.log(charI)
+
+            nextOffset = (7 * scalex);
 
         }
 
@@ -351,6 +382,8 @@ class Human {
         canvas.setFont("Arial", "20");
         canvas.drawFont("Kill!", this.trueX, this.trueY, "red", "center");
         canvas.setFont(fontStack);
+
+        kills++;
     }
 }
 
@@ -512,6 +545,12 @@ canvas.canvas.addEventListener('mousedown', function(e) {
     player.shoot(e);
 } );
 
+document.addEventListener('keydown', function(e) {
+    if (e.code == "KeyP") {
+        gameStart = !gameStart;
+    }
+}  );
+
 // Create 5 humans 
 for (var i = 0; i < 5; i++) {
     var human = new Human(false, Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * canvas.width, Math.random() * canvas.height);
@@ -530,7 +569,6 @@ var gameLoop = setInterval(() => {
     if (gameStart) {
         canvas.fill("#1c1c1c");
         frames++;
-        canvas.drawText("Text", 10-canvas.camera.x, 10-canvas.camera.y, 5,5, "white");
 
 
         // log("debug", "Tick!");
@@ -609,10 +647,18 @@ var gameLoop = setInterval(() => {
         //     }
         // }
 
-        if (kills == target) {
-            gameStart = false;
-            canvas.drawFont(`You win!`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+        // time passed is frames / 60 rounded to the nearest tenth
+        var timePassed = Math.round(frames / 60 * 10) / 10;
+        // add a leading zero if there is no decimal
+        if (timePassed % 1 == 0) {
+            timePassed += ".0";
         }
+        
+        // HUD
 
-}
+        canvas.drawText(`Killed ${kills}/${target}`, 5+canvas.camera.x, 5+canvas.camera.y, 1,1, "white", "left");
+        canvas.drawText(`Time:${timePassed}`, 5+canvas.camera.x, 15+canvas.camera.y, 1,1, "white", "left", "top", ops={shortFullStop: true});
+
+} 
+
 } , 1000/60); // 60 fps
