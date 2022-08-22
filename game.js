@@ -13,6 +13,7 @@ const log = (logType, msg) => {
 const fontStack = '"Comic Sans MS"';
 var bullets = [];
 var hitboxes = [];
+var id = 0
 
 class Canvas {
     constructor(id) {
@@ -41,6 +42,8 @@ class Canvas {
         this.mousePos.y = ((e.clientY - rect.top) /2) + this.camera.y;
 
         document.getElementById('mousePos').innerHTML = `${this.mousePos.x}, ${this.mousePos.y}`;
+
+        return this.mousePos;
     }
 
     // Drawing
@@ -77,8 +80,8 @@ class Canvas {
         let chars = string.split("");
         // console.log(chars);
         
-        let charWidth = 6
-        let strLength = (chars.length * charWidth) * scalex; 
+        let charWidth = 7
+        let strLength = (chars.length * charWidth - 1) * scalex; 
 
         let charHeight = 7
         let strHeight = (charHeight * scaley);
@@ -125,6 +128,7 @@ class Canvas {
 
             if (lastWasFull) {
                 offset -= (0.5 * scalex);
+                lastWasFull = false;
             }
             
             if(ops.shortFullStop) {
@@ -187,258 +191,65 @@ class Canvas {
 
 // Entity classes
 
-class Hitbox {
-    constructor(x, y, w, h, owner=null) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.owner = owner;
+class Entity {
+    constructor(name, x, y, sprite=undefined) {
+        this.name = name,
+        this.x = x,
+        this.y = y,
+        this.sprite = sprite
+    }
+    step() {
+
+    }
+    draw () {
+
+    }
+}
+
+class Room {
+    constructor(name) {
+        this.id = id;
+        id += 1;
+        this.name = name;
+        this.objects = [];
+        this.hitboxes = [];
+        this.background = [];
+        this.w = canvas.width;
+        this.h = canvas.height;
     }
 
-    collides(other) {
-        // check if this hitbox collides with another hitbox
-        if (this.x < other.x + other.w &&
-            this.x + this.w > other.x &&
-            this.y < other.y + other.h &&
-            this.h + this.y > other.y) {
-                return true;
-            }
-        return false;
+    spawn(entity) {
+        this.objects.push(entity)
+    }
+
+    step() {
+        for (let object of this.objects) {
+            object.step();
+        }
     }
 
     draw() {
-        // draw the hitbox
-        canvas.strokeRect(this.x+canvas.camera, this.y, this.w, this.h, 'green');
+        // draws stuff onto the screen
+        for (let object of this.objects) {
+            object.draw()
+        }
     }
+
+    drawGUI() {
+
+    }
+
+    keyDown(key) {
+        console.log(key);
+    }
+    keyPressed(key) {
+        console.log(key);
+    }
+    keyUp(key) {
+        console.log(key);
+    }
+
 }
-
-class Hamster { // Player class
-    constructor(name="", trueX=0, trueY=0) {
-        this.name = name;
-        this.velocity = {x: 0, y: 0};
-        this.maxVelocity = {x: 2, y: 2};
-        this.trueX = trueX
-        this.trueY = trueY
-        // x and y are the position of the hamster relative to the camera
-        this.x = this.trueX - canvas.camera.x;
-        this.y = this.trueY - canvas.camera.y;
-        this.aim = {x: 0, y: 0};
-
-        this.sprite = new Image();
-        this.sprite.src = "";
-
-        this.w = 20; // this'll change depending on the sprite's width
-        this.h = 20; // this'll change depending on the sprite's height
-
-    }
-
-    update() {
-        this.trueX += this.velocity.x;
-        this.trueY += this.velocity.y;
-        this.x = this.trueX - canvas.camera.x;
-        this.y = this.trueY - canvas.camera.y;
-        // decrease velocity
-        this.velocity.x *= 0.9;
-        this.velocity.y *= 0.9;
-        // log(`DEBUG Hamster ${this.name}`, `x: ${this.x}, y: ${this.y}`);
-        // log(`DEBUG Hamster ${this.name}`, `velocity: x${this.velocity.x}, y${this.velocity.y}`);
-
-        // set the aim to the current mouse pos
-        this.aim.x = canvas.mousePos.x;
-        this.aim.y = canvas.mousePos.y;
-
-        // calculate the angle between the hamster and the mouse
-        this.aim.angle = Math.atan2(this.aim.y - this.trueY - 10, this.aim.x - this.trueX - 10);    
-        
-        document.getElementById('truexy').innerText = `${this.trueX}, ${this.trueY}`;
-        document.getElementById('hamxy').innerText = `${this.x}, ${this.y}`;
-
-        // if (this.y < 10) {
-        //     // move the camera up enough to keep the hamster in view, if the hamster is moving up
-        //     if (this.velocity.y < 0) {
-        //         canvas.mvCamera(0, this.velocity.y*1.1);
-        //     }
-            
-        // }
-        // if (this.y > 210) {
-        //     if(this.velocity.y > 0) {
-        //         canvas.mvCamera(0, this.velocity.y*1.1);
-        //     }
-        // }
-        // if (this.x < 10) {
-        //     if(this.velocity.x < 0) {
-        //         canvas.mvCamera(this.velocity.x*1.1, 0);
-        //     }
-        // }
-        // if (this.x > 290) {
-        //     if(this.velocity.x > 0) {
-        //         canvas.mvCamera(this.velocity.x*1.1, 0);
-        //     }
-        // }
-
-        // center the camera on the hamster
-        canvas.setCamera(this.trueX - canvas.width/2, this.trueY - canvas.height/2);
-
-
-
-
-    }
-
-    increaseVelocity(x, y) {
-        this.velocity.x += x;
-        this.velocity.y += y;
-        if (this.velocity.x > this.maxVelocity.x) {
-            this.velocity.x = this.maxVelocity.x;
-        }
-        if (this.velocity.y > this.maxVelocity.y) {
-            this.velocity.y = this.maxVelocity.y;
-        }
-    }
-
-    draw(canvas) {
-        canvas.drawRect(this.trueX, this.trueY, 20, 20, "red");
-        // draw the name above the hamster
-        
-        canvas.drawFont(this.name, this.trueX, this.trueY - 10, "white");
-    }
-
-    shoot(e) {
-        // spawn a bullet pointing at the aim
-        let bullet = new Bullet(this.aim.angle, this.trueX + 10, this.trueY + 10, 50);
-        bullets.push(bullet);
-    }
-}
-
-class Human {
-    constructor(scared, trueX=0, trueY=0) {
-        this.scared = scared;
-        this.velocity = {x: 1, y: 0};
-        this.maxVelocity = {x: 2, y: 2};
-        this.trueX = trueX
-        this.trueY = trueY
-        // x and y are the position of the hamster relative to the camera
-        this.velocity = {x: 0, y: 0};
-        this.x = this.trueX - canvas.camera.x;
-        this.y = this.trueY - canvas.camera.y;
-
-        this.targX = Math.floor(Math.random() * 1000);
-        this.targY = Math.floor(Math.random() * 1000);
-
-        // get an ID for the human
-        this.humanID = Math.floor(Math.random() * 1000000);
-
-        this.speed = 0.1;
-
-        this.hitbox = new Hitbox(this.x, this.y, 20, 20, `human${this.humanID}`);
-        hitboxes.push(this.hitbox);
-
-    }
-
-    update() {
-        
-        // if the human is near the target, move to a new target
-        if (Math.abs(this.trueX - this.targX) < 10 && Math.abs(this.trueY - this.targY) < 10) {
-            this.targX = Math.floor(Math.random() * 1000);
-            this.targY = Math.floor(Math.random() * 1000);
-        }
-        // move towards the target
-        if (this.trueX < this.targX) {
-            this.trueX += this.speed;
-        }
-        if (this.trueX > this.targX) {
-            this.trueX -= this.speed;
-        }
-        if (this.trueY < this.targY) {
-            this.trueY += this.speed;
-        }
-        if (this.trueY > this.targY) {
-            this.trueY -= this.speed;
-        }
-        this.x = this.trueX - canvas.camera.x;
-        this.y = this.trueY - canvas.camera.y;
-
-        this.hitbox.x = this.x;
-        this.hitbox.y = this.y;
-
-
-    }
-
-    draw(canvas) {
-        canvas.drawRect(this.trueX, this.trueY, 20, 20, "blue");
-        canvas.drawText(`human${this.humanID}`, this.trueX, this.trueY - 10, 1,1, "white");
-
-        // draw the hitbox
-        this.hitbox.draw(canvas);
-    }
-
-    die() {
-        // remove the hitbox from the hitboxes array
-        hitboxes.splice(hitboxes.indexOf(this.hitbox), 1);
-        console.debug(`Human ${this.humanID} died, removing ${this.hitbox}`);
-        // remove the human from the humans array
-        humans.splice(humans.indexOf(this), 1);
-
-        canvas.setFont("Arial", "20");
-        canvas.drawFont("Kill!", this.trueX, this.trueY, "red", "center");
-        canvas.setFont(fontStack);
-
-        kills++;
-    }
-}
-
-class Bullet {
-    constructor(direction, x, y, velocity) {
-        this.direction = direction;
-        this.trueX = x;
-        this.trueY = y;
-        this.velocity = velocity/10;
-
-        this.hitbox = new Hitbox(this.x, this.y, 10, 10, "bullet");
-    }
-
-    update() {
-        // move in the direction of the angle
-        this.trueX += Math.cos(this.direction) * this.velocity;
-        this.trueY += Math.sin(this.direction) * this.velocity;
-
-        // update the hitbox position
-        this.hitbox.x = this.trueX - canvas.camera.x;
-        this.hitbox.y = this.trueY - canvas.camera.y;
-        this.x = this.trueX - canvas.camera.x;
-        this.y = this.trueY - canvas.camera.y;
-
-        // the kill check: check if the bullet has collided with a hitbox. Use the collides function of the hitbox class
-        for (let i = 0; i < hitboxes.length; i++) {
-            if (this.hitbox.collides(hitboxes[i])) {
-                // if the bullet has collided with a hitbox, remove the bullet and the hitbox
-                bullets.splice(bullets.indexOf(this), 1);
-
-                console.log(`Bullet ${this.hitbox.owner} collided with ${hitboxes[i].owner}`);
-                console.log(`Removing ${hitboxes[i]}`);
-                console.log(hitboxes[i])
-                
-                // find the human by the hitbox ID and remove it from the humans array with the Die function
-                for (let j = 0; j < humans.length; j++) {
-                    if (humans[j].hitbox.owner == hitboxes[i].owner) {
-                        humans[j].die();
-                    }
-                }
-
-            }
-        }
-    }
-
-    draw(canvas) {
-        // draw a rectangle with a size of 2x3 at the position of the bullet, pointing in the direction of the angle
-        canvas.drawRect(this.trueX, this.trueY, 2, 3, "white");
-
-        // DEBUG: draw the bullet's position
-        canvas.drawFont(`${Math.round(this.trueX)}, ${Math.round(this.trueY)}`, this.trueX, this.trueY - 10, "white");
-    }
-}
-
-
 
 // INIT CANVAS
 var fIndex = fntINDEX;
@@ -453,9 +264,7 @@ canvas.setFont(fontStack);
 gameCtx.imageSmoothingEnabled = false;
 var gameStart = false;
 
-canvas.setFont(fontStack, "20");
 canvas.drawText("Death By Hamster", canvas.width / 2, canvas.height / 2 - 40, 2, 2, "white", "middle");
-canvas.setFont(fontStack);
 
 // Load images
 var images = {
@@ -463,7 +272,10 @@ var images = {
         "ingame": "./assets/aimerthing.png",
     },
     "background": {
-        "ingame": "./assets/crazyabackground_a.png",
+        "floor": "./assets/flor.png",
+    },
+    "tileset": {
+        "tiles":"./t.png",
     }
 };
 
@@ -502,7 +314,7 @@ for (var key in images) {
         IMG.addEventListener('error', () => {
             gameStart = false;
             canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-            canvas.drawFont(`Error loading image ${images[key][subkey]}`, canvas.width / 2, canvas.height / 2 + 45, "red    ", "center");
+            canvas.drawFont(`Error loading image ${images[key][subkey]}`, canvas.width / 2, canvas.height / 2 + 45, "red", "center");
         } );
         IMG.src = images[key][subkey];
 
@@ -515,150 +327,58 @@ for (var key in images) {
         
     }
 }
+var targFPS = 60;
+var frame = 0;
 
+var rooms = [];
 
+rooms.push(new Room("Menu"));
 
-// Game init
-var player = new Hamster("Player", canvas.width/2, canvas.height/2);
-var humans = [];
-
-// THe input checker-inator
-/* Here's how it works:
-If a keydown is detected, the key preforms it's action
-    If it doesn't get unpressed in the tick, keep the velocity at the max
-    */
-   var keys = {};
-   document.addEventListener('keydown', function(e) {
-    keys[e.code] = true;
-} );
-document.addEventListener('keyup', function(e) {
-    keys[e.code] = false;
-} );
-
-// On a mouse move, update the mouse position
-canvas.canvas.addEventListener('mousemove', function(e) {
-    canvas.getMousePos(e);
-} );
-
-canvas.canvas.addEventListener('mousedown', function(e) {
-    // shoot!
-    player.shoot(e);
-} );
-
-document.addEventListener('keydown', function(e) {
-    if (e.code == "KeyP") {
-        gameStart = !gameStart;
-    }
-}  );
-
-// Create 5 humans 
-for (var i = 0; i < 5; i++) {
-    var human = new Human(false, Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * canvas.width, Math.random() * canvas.height);
-    humans.push(human);
+var cRoom = rooms[0];
+cRoom.drawGUI = () => {
+    canvas.drawText("Death by Hamster", canvas.width/2, canvas.height/2-25, 2, 2, "white", "middle", "middle");
+}
+cRoom.keyDown = (key) => {
+    // go to the next room
+    cRoom = rooms[1];
 }
 
-// wait for 30 frames before starting the game
-var frames = 0;
+var gameRoom = new Room("Game");
+var player   = new Entity("Player", 0,0);
 
-let kills = 0;
-let target = 5;
+player.step = () => {
+}
 
-// game loop
+gameRoom.spawn(player);
+gameRoom.drawGUI = () => {
+    canvas.drawText("Test", canvas.width/2, canvas.height/2-25, 2, 2, "white", "middle", "middle");
+}
+rooms.push(gameRoom);
+
+var keysPressed = {};
+
+document.addEventListener('keydown', (e) => {
+    keysPressed[e.key] = true;
+});
+document.addEventListener('keyup', (e) => {
+    keysPressed[e.key] = false;
+} );
+
 var gameLoop = setInterval(() => {
+    frame++;
+    canvas.fill("black");
+
+    for (let key in keysPressed) {
+        if (keysPressed[key]) {
+            cRoom.keyDown(key);
+        }
+    }
+
     
-    if (gameStart) {
-        canvas.fill("#1c1c1c");
-        frames++;
+    cRoom.step();
+    cRoom.draw();
+    cRoom.drawGUI();
 
+    canvas.drawText(`Frame:${frame}`, 5,5,1,1,"red")
 
-        // log("debug", "Tick!");
-
-        // input checker
-        if (keys["ArrowUp"]) {
-            player.increaseVelocity(0, -0.3);
-        } 
-        if (keys["ArrowDown"]) {
-            player.increaseVelocity(0, 0.3);
-        } 
-        if (keys["ArrowLeft"]) {
-            player.increaseVelocity(-0.3, 0);
-        } 
-        if (keys["ArrowRight"]) {
-            player.increaseVelocity(0.3, 0);
-        } 
-        if (keys["KeyW"]) {
-            canvas.camera.y -= 1;
-        }
-        if (keys["KeyS"]) {
-            canvas.camera.y += 1;
-        }
-        if (keys["KeyA"]) {
-            canvas.camera.x -= 1;
-        }
-        if (keys["KeyD"]) {
-            canvas.camera.x += 1;
-        }
-
-        player.update();
-
-
-
-        // update humans
-        for (var i = 0; i < humans.length; i++) {
-            humans[i].update();
-        }
-
-        // draw the background
-        // canvas.drawImage(images.background.ingame, 0, 0, canvas.width, canvas.height);
-
-        // draw humans
-        for (var i = 0; i < humans.length; i++) {
-            humans[i].draw(canvas);
-        }
-        player.draw(canvas);
-
-        // draw bullets
-        for (var i = 0; i < bullets.length; i++) {
-            bullets[i].draw(canvas);
-            // run the update 10 times per tick
-            for (var j = 0; j < 10; j++) {
-                try {
-                    bullets[i].update();
-                }
-                catch (e) {
-                    break;
-                }
-            }
-        }
-
-        canvas.drawImg(images.mouse.ingame, player.aim.x - 8, player.aim.y - 8, 16, 16);
-        
-
-        document.getElementById("dbg_camera").innerText = `x: ${canvas.camera.x}, y: ${canvas.camera.y}`;
-
-        // // check if a bullet has collided with a human
-        // for (var i = 0; i < bullets.length; i++) {
-        //     for (var j = 0; j < humans.length; j++) {
-        //         if (bullets[i].hitbox.collides(humans[j].hitbox)) {
-        //             // if the bullet has collided with a human, remove the bullet and the human
-        //             bullets.splice(bullets.indexOf(bullets[i]), 1);
-        //             humans.splice(humans.indexOf(humans[j]), 1);
-        //         }
-        //     }
-        // }
-
-        // time passed is frames / 60 rounded to the nearest tenth
-        var timePassed = Math.round(frames / 60 * 10) / 10;
-        // add a leading zero if there is no decimal
-        if (timePassed % 1 == 0) {
-            timePassed += ".0";
-        }
-        
-        // HUD
-
-        canvas.drawText(`Killed ${kills}/${target}`, 5+canvas.camera.x, 5+canvas.camera.y, 1,1, "white", "left");
-        canvas.drawText(`Time:${timePassed}`, 5+canvas.camera.x, 15+canvas.camera.y, 1,1, "white", "left", "top", ops={shortFullStop: true});
-
-} 
-
-} , 1000/60); // 60 fps
+} , 1000/targFPS); // 60 fps
