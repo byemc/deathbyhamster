@@ -1,35 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Death by Hamster</title>
-    <style>
-        #gameCanvas {
-            display: block;
-            margin: auto;
-            width: 640px;
-            height: 480px;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: -webkit-crisp-edges;
-            image-rendering: pixelated;
-
-        }
-    </style>
-</head>
-<body>
-    
-    <canvas width="320" height="240" id="gameCanvas">
-    </canvas>
-
-    <h2>Debug shit</h2>
-    <p>Mouse co-ords are <span id="mousePos"></span> </p>
-    <p>Camera: <span id="dbg_camera"></span></p>
-    <p>True XY: <span id="truexy"></span></p>
-    <p>XY: <span id="hamxy"></span></p>
-
-    <script id="fontScript" src="./letters.js"></script>
-    <script src="./game.js"></script>
-</body>
-</html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Death by Hamster</title>
+<style>
+    body {
+        background:rgb(22, 22, 22);
+    }
+#gameCanvas {
+display: block;
+margin: auto;
+width: 1200px;
+height: 800px;
+image-rendering: -moz-crisp-edges;
+image-rendering: -webkit-crisp-edges;
+image-rendering: pixelated;
+cursor: none;
+}
+@media screen and (max-width: 1200px) {
+#gameCanvas {
+    /* maintain the game's aspect ratio */
+    width: 100%;
+    height: auto;
+}
+}
+</style>
+<canvas width="600" height="400" id="gameCanvas">
+</canvas>
+<script id="fontScript" src="./letters.js"></script>
+<script src="./game.js"></script>

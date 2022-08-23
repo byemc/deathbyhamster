@@ -13,7 +13,8 @@ const log = (logType, msg) => {
 const fontStack = '"Comic Sans MS"';
 var bullets = [];
 var hitboxes = [];
-var id = 0
+var id = 0;
+var pi = Math.PI;
 
 class Canvas {
     constructor(id) {
@@ -21,8 +22,10 @@ class Canvas {
         this.ctx = this.canvas.getContext('2d');
         this.width = this.canvas.width;
         this.height = this.canvas.height;
-        this.realWidth = 640;
-        this.realHeight = 480;
+        // get the width and height of the canvas from CSS
+        this.trueWidth = this.canvas.offsetWidth;
+        this.trueHeight = this.canvas.offsetHeight;
+        this.scale = this.trueWidth / this.width;
         this.camera = {x: 0, y: 0};
 
         this.mousePos = {x: 0, y: 0};
@@ -37,21 +40,34 @@ class Canvas {
 
     // Mouse position crap
     getMousePos(e) {
-        let rect = this.canvas.getBoundingClientRect();
-        this.mousePos.x = ((e.clientX - rect.left) / 2) + this.camera.x;
-        this.mousePos.y = ((e.clientY - rect.top) /2) + this.camera.y;
-
-        document.getElementById('mousePos').innerHTML = `${this.mousePos.x}, ${this.mousePos.y}`;
-
-        return this.mousePos;
+        // get the mouse position relative to the canvas and divide by the scale
+        this.mousePos.x = e.clientX - this.canvas.offsetLeft;
+        this.mousePos.y = e.clientY - this.canvas.offsetTop;
+        this.realMousePos.x = this.mousePos.x / this.scale;
+        this.realMousePos.y = this.mousePos.y / this.scale;
     }
 
     // Drawing
-    drawImg(img, x, y, w, h) {
-        this.ctx.drawImage(img, x-this.camera.x, y-this.camera.y, w, h);
+    drawImg(img, x,y,w,h, direction=0) {
+        this.ctx.save();
+        this.ctx.translate(x+w/2, y+h/2);
+        this.ctx.rotate(direction * pi/180);
+        this.ctx.drawImage(img, -w/2, -h/2, w, h);
+        this.ctx.restore(); 
     }
-    drawImage(img, x, y, w, h) {
-        this.drawImg(img, x, y, w, h);
+
+    sliceImage(img, x, y, w, h, cropX, cropY, cropW, cropH, direction=0) {
+        this.ctx.save();
+        this.ctx.translate(x+w/2, y+h/2);
+        this.ctx.rotate(direction * pi/180);
+        this.ctx.drawImage(img, cropX, cropY, cropW, cropH, -w/2, -h/2, w, h);
+        this.ctx.restore();
+        // console.log(`${x}, ${y}, ${w}, ${h}, ${cropX}, ${cropY}, ${cropW}, ${cropH}`);
+    }
+    
+    drawImage(img, x, y, w, h, direction=0) {
+        // alias for drawImg
+        this.drawImg(img, x, y, w, h, direction);
     }
 
     drawRect(x, y, w, h, color="white") {
@@ -199,7 +215,8 @@ class Entity {
         this.sprite = sprite
     }
     step() {
-
+        console.log(`${this.name} is stepping`);
+        console.log(`${this.name} is at ${this.x}, ${this.y}`);
     }
     draw () {
 
@@ -223,15 +240,16 @@ class Room {
     }
 
     step() {
-        for (let object of this.objects) {
-            object.step();
+        // step all objects in the room
+        for (let obj of this.objects) {
+            obj.step();
         }
     }
 
     draw() {
-        // draws stuff onto the screen
-        for (let object of this.objects) {
-            object.draw()
+        // draw all objects in the room
+        for (let obj of this.objects) {
+            obj.draw();
         }
     }
 
@@ -243,10 +261,14 @@ class Room {
         console.log(key);
     }
     keyPressed(key) {
-        console.log(key);
+        // console.log(key);
     }
     keyUp(key) {
-        console.log(key);
+        // console.log(key);
+    }
+
+    start() {
+
     }
 
 }
@@ -270,15 +292,20 @@ canvas.drawText("Death By Hamster", canvas.width / 2, canvas.height / 2 - 40, 2,
 var images = {
     "mouse": {
         "ingame": "./assets/aimerthing.png",
+        "cursor": "./cursor.png"
     },
     "background": {
         "floor": "./assets/flor.png",
     },
     "tileset": {
         "tiles":"./t.png",
+    },
+    "player": {
+        "debugarrow": "./assets/arrow.png",
+        "car": "./hamster.png",
+        "gun": "./gun.png",
     }
 };
-
 
 
 let loadedImages = 0;
@@ -300,7 +327,7 @@ canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.widt
 // after all images are loaded, and no errors occured, start the game
 for (var key in images) {
     for (var subkey in images[key]) {
-
+        
         // attempt to load the image
         var IMG = new Image();
         IMG.addEventListener('load', () => {
@@ -327,44 +354,174 @@ for (var key in images) {
         
     }
 }
+
+hamsterRef = {
+    "file": images.player.car,
+    "nolights": {
+        "x": 1,
+        "y": 1,
+        "w": 32,
+        "h": 16,
+    },
+    "brake": {
+        "x": 35,
+        "y": 1,
+        "w": 32,
+        "h": 16,
+    },
+    "brakereverse": {
+        "x": 1,
+        "y": 20,
+        "w": 32,
+        "h": 16,
+    },
+    "reverse": {
+        "x": 35,
+        "y": 20,
+        "w": 32,
+        "h": 16,
+    }
+}
+
+console.debug(images)
 var targFPS = 60;
 var frame = 0;
 
 var rooms = [];
 
-rooms.push(new Room("Menu"));
+var menu = new Room("menu");
 
-var cRoom = rooms[0];
-cRoom.drawGUI = () => {
+var testImage = new Image();
+testImage.src = "./assets/arrow.png";
+
+menu.drawGUI = () => {
     canvas.drawText("Death by Hamster", canvas.width/2, canvas.height/2-25, 2, 2, "white", "middle", "middle");
+    canvas.drawText("Press any key to start", canvas.width/2, canvas.height/2+25, 1, 1, "white", "middle", "middle");
 }
-cRoom.keyDown = (key) => {
-    // go to the next room
-    cRoom = rooms[1];
+const nextRoom = () => {
+    // move to the next room
+    roomI++;
+    if (roomI >= rooms.length) {
+        roomI = 0;
+    }
+    cRoom = rooms[roomI];
+}
+
+const prevRoom = () => {
+    // move to the previous room
+    roomI--;
+    if (roomI < 0) {
+        roomI = rooms.length - 1;
+    }
+    cRoom = rooms[roomI];
+}
+
+const setRoom = (roomI) => {
+    // set the current room to the given room
+    cRoom = rooms[roomI];
+}
+menu.keyDown = (key) => {
+    nextRoom();
 }
 
 var gameRoom = new Room("Game");
 var player   = new Entity("Player", 0,0);
+player.speed = 0;
+player.maxSpeed = 5;
+player.direction = 0;
+player.accel = 1;
+player.sprite = images.player.car;
+console.debug(player.sprite);
+player.crop = hamsterRef.nolights;
+player.x = canvas.width/2;
+player.y = canvas.height/2;
+player.w = player.crop.w*2;
+player.h = player.crop.h*2;
+player.target = {x: 0, y: 0};
+console.debug(`player.x: ${player.x}; player.y: ${player.y}; player.w: ${player.w}; player.h: ${player.h}`);
 
 player.step = () => {
+    // move in this.direction, which is an angle in degrees
+    player.x += player.speed * Math.cos(player.direction * pi / 180);
+    player.y += player.speed * Math.sin(player.direction * pi / 180);
+
+    player.speed *= 0.009;
 }
 
+console.log(player);
+
+player.draw = () => {
+    // draw this.sprite at this.x, this.y
+    canvas.sliceImage(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction); 
+    canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
+
+    // turret
+    // canvas.drawImage(testImage, player.x, player.y, player.w, player.h, player.direction);
+
+}   
+
 gameRoom.spawn(player);
-gameRoom.drawGUI = () => {
-    canvas.drawText("Test", canvas.width/2, canvas.height/2-25, 2, 2, "white", "middle", "middle");
+
+gameRoom.keyDown = (key) => {
+    console.log(key);
+
+    if (key == "ArrowUp" || key == "KeyW") {
+        player.speed += player.accel*2;
+        if (player.speed > player.maxSpeed) {
+            player.speed = player.maxSpeed;
+        }
+    }
+    if (key == "ArrowDown" || key == "KeyS") {
+        player.speed -= player.accel*2.5;
+        if (player.speed < 0) {
+            player.speed = 0;
+        }
+    }
+    if (key == "ArrowLeft" || key == "KeyA") {
+        player.direction -= 2.5;
+        if (player.direction < 0) {
+            player.direction = 360;
+        }
+    }
+    if (key == "ArrowRight" || key == "KeyD") {
+        player.direction += 2.5;
+        if (player.direction > 360) {
+            player.direction = 0;
+        }
+    }
 }
+
+
+gameRoom.drawGUI = () => {
+    canvas.drawText("Test", cRoom.w/2, cRoom.h/2-25, 2, 2, "white", "middle", "middle");
+}
+
+rooms.push(menu);
 rooms.push(gameRoom);
+var roomI = 0;
+var cRoom = rooms[roomI];
 
 var keysPressed = {};
 
 document.addEventListener('keydown', (e) => {
-    keysPressed[e.key] = true;
+    keysPressed[e.code] = true;
 });
 document.addEventListener('keyup', (e) => {
-    keysPressed[e.key] = false;
+    keysPressed[e.code] = false;
+} );
+
+var lastTime = 0;
+
+var mse = {x: 0, y: 0};
+
+canvas.canvas.addEventListener('mousemove', (e) => {
+    mse = canvas.getMousePos(e);
 } );
 
 var gameLoop = setInterval(() => {
+    canvas.trueWidth = canvas.canvas.offsetWidth;
+    canvas.trueHeight = canvas.canvas.offsetHeight;
+    canvas.scale = canvas.trueWidth / canvas.width;
     frame++;
     canvas.fill("black");
 
@@ -373,12 +530,29 @@ var gameLoop = setInterval(() => {
             cRoom.keyDown(key);
         }
     }
-
     
     cRoom.step();
     cRoom.draw();
-    cRoom.drawGUI();
+    cRoom.drawGUI(); 
 
-    canvas.drawText(`Frame:${frame}`, 5,5,1,1,"red")
+    /* BEDUG INFO */
+    canvas.drawText(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 10, 10, 1, 1, "white", "left", "top");
+    switch (cRoom.name) {
+        case "menu":
+            canvas.drawText(`WidthHeight:${canvas.width} ${canvas.height}`, 10, 30, 1, 1, "white", "left", "top");
+            canvas.drawText(`trueWidthHeight:${canvas.trueWidth} ${canvas.trueHeight}`, 10, 50, 1, 1, "white", "left", "top");
+            canvas.drawText(`Scale:${canvas.scale}`, 10, 70, 1, 1, "white", "left", "top");
+            break;
+        case "Game":
+            canvas.drawText(`PlayerXY:${player.x},${player.y}`, 10, 25, 1, 1, "white", "left", "top");
+            // also show speed, rounded to 2 decimal places
+            canvas.drawText(`Speed:${Math.round(player.speed*100)/100}`, 10, 40, 1, 1, "white", "left", "top");
+            canvas.drawText(`Direction:${player.direction}`, 10, 50, 1, 1, "white", "left", "top");
+            break;
+    }
+
+    canvas.drawImage(images.mouse.cursor, canvas.mousePos.x, canvas.mousePos.y, images.mouse.cursor.w, images.mouse.cursor.h, 0);
+    lastTime = Date.now();
+
 
 } , 1000/targFPS); // 60 fps
