@@ -39,21 +39,38 @@ class Canvas {
     }
 
     // Mouse position crap
-    getMousePos(e) {
-        // get the mouse position relative to the canvas and divide by the scale
-        this.mousePos.x = e.clientX - this.canvas.offsetLeft;
-        this.mousePos.y = e.clientY - this.canvas.offsetTop;
-        this.realMousePos.x = this.mousePos.x / this.scale;
-        this.realMousePos.y = this.mousePos.y / this.scale;
+    getMousePos(evt) {
+        var rect = this.canvas.getBoundingClientRect(), // abs. size of element
+          scaleX = this.canvas.width / rect.width,    // relationship bitmap vs. element for x
+          scaleY = this.canvas.height / rect.height;  // relationship bitmap vs. element for y
+
+        this.mousePos.x = (evt.clientX - rect.left) * scaleX;
+        this.mousePos.y = (evt.clientY - rect.top) * scaleY;
+      
+        return {
+          x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
+          y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
+        }
+      }
+
+    translate(x, y) {
+        this.ctx.translate(x, y);
+    }
+
+    rotate(angle) {
+        this.ctx.rotate(angle);
     }
 
     // Drawing
-    drawImg(img, x,y,w,h, direction=0) {
+    drawImg(img, x,y,w,h, direction=0, originx=x+w/2, originy=y+h/2) {
         this.ctx.save();
-        this.ctx.translate(x+w/2, y+h/2);
+        this.ctx.translate(originx, originy);
         this.ctx.rotate(direction * pi/180);
         this.ctx.drawImage(img, -w/2, -h/2, w, h);
-        this.ctx.restore(); 
+        this.ctx.restore();
+    }
+
+    drawImgRotated(img, x,y,w,h, direction=0, originx=x+w/2, originy=y+h/2) {
     }
 
     sliceImage(img, x, y, w, h, cropX, cropY, cropW, cropH, direction=0) {
@@ -180,7 +197,7 @@ class Canvas {
 
     }
 
-    setFont(fontStack=fontStack, size="10") {
+    setFont(fontStack, size="10") {
         this.ctx.font = `${size}px ${fontStack}`
     }
 
@@ -437,7 +454,6 @@ player.x = canvas.width/2;
 player.y = canvas.height/2;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
-player.target = {x: 0, y: 0};
 console.debug(`player.x: ${player.x}; player.y: ${player.y}; player.w: ${player.w}; player.h: ${player.h}`);
 
 player.step = () => {
@@ -453,10 +469,25 @@ console.log(player);
 player.draw = () => {
     // draw this.sprite at this.x, this.y
     canvas.sliceImage(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction); 
-    canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
+    // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
-    // turret
-    // canvas.drawImage(testImage, player.x, player.y, player.w, player.h, player.direction);
+    let gun = images.player.gun;
+    let gunOx = 25;
+    let gunOy = -3;
+
+    let carCx = player.x + player.w/2;
+    let carCy = player.y + player.h/2;
+    
+
+    // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
+    let gunx = carCx - gunOx * Math.cos(player.direction * pi / 180) - gunOy * Math.sin(player.direction * pi / 180);
+    let guny = carCy - gunOx * Math.sin(player.direction * pi / 180) + gunOy * Math.cos(player.direction * pi / 180);
+
+    // get the angle between the gun and the mouse
+    let mouseAngle = Math.atan2(canvas.mousePos.y - guny-1, canvas.mousePos.x - gunx-19) * 180 / pi;
+
+    // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
+    canvas.drawImage(gun, gunx, guny, gun.width*2, gun.height*2, mouseAngle);
 
 }   
 
@@ -472,9 +503,9 @@ gameRoom.keyDown = (key) => {
         }
     }
     if (key == "ArrowDown" || key == "KeyS") {
-        player.speed -= player.accel*2.5;
-        if (player.speed < 0) {
-            player.speed = 0;
+        player.speed -= player.accel*1.5;
+        if (player.speed < -player.maxSpeed) {
+            player.speed = -player.maxSpeed;
         }
     }
     if (key == "ArrowLeft" || key == "KeyA") {
@@ -493,7 +524,7 @@ gameRoom.keyDown = (key) => {
 
 
 gameRoom.drawGUI = () => {
-    canvas.drawText("Test", cRoom.w/2, cRoom.h/2-25, 2, 2, "white", "middle", "middle");
+    // canvas.drawText("Test", cRoom.w/2, cRoom.h/2-25, 2, 2, "white", "middle", "middle");
 }
 
 rooms.push(menu);
@@ -523,7 +554,7 @@ var gameLoop = setInterval(() => {
     canvas.trueHeight = canvas.canvas.offsetHeight;
     canvas.scale = canvas.trueWidth / canvas.width;
     frame++;
-    canvas.fill("black");
+    canvas.fill("#afafaf");
 
     for (let key in keysPressed) {
         if (keysPressed[key]) {
@@ -551,7 +582,14 @@ var gameLoop = setInterval(() => {
             break;
     }
 
-    canvas.drawImage(images.mouse.cursor, canvas.mousePos.x, canvas.mousePos.y, images.mouse.cursor.w, images.mouse.cursor.h, 0);
+    switch (cRoom.name) {
+        case "menu":
+            canvas.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
+            break;
+        case "Game":
+            canvas.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
+            break;
+    }
     lastTime = Date.now();
 
 
