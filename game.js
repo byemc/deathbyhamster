@@ -484,10 +484,10 @@ player.draw = () => {
     let guny = carCy - gunOx * Math.sin(player.direction * pi / 180) + gunOy * Math.cos(player.direction * pi / 180);
 
     // get the angle between the gun and the mouse
-    let mouseAngle = Math.atan2(canvas.mousePos.y - guny-1, canvas.mousePos.x - gunx-19) * 180 / pi;
+    let mouseAngle = Math.atan2(canvas.mousePos.y - guny, canvas.mousePos.x - gunx) * 180 / pi;
 
     // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
-    canvas.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, mouseAngle, gunx, guny);
+    canvas.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, mouseAngle, gunx, guny); // these two vars at the end are where the gun's center is placed
     // canvas.drawRect(gunx, guny, 1,1, "red");
 
 }   
@@ -545,10 +545,16 @@ document.addEventListener('keyup', (e) => {
 var lastTime = 0;
 
 var mse = {x: 0, y: 0};
+var lastClick = {x: 0, y: 0};
 
 canvas.canvas.addEventListener('mousemove', (e) => {
     mse = canvas.getMousePos(e);
 } );
+
+canvas.canvas.addEventListener("click", (e) => {
+    console.log(e);
+    lastClick = canvas.getMousePos(e);
+});
 
 var gameLoop = setInterval(() => {
     canvas.trueWidth = canvas.canvas.offsetWidth;
