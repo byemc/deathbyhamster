@@ -472,8 +472,8 @@ player.draw = () => {
     // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
     let gun = images.player.gun;
-    let gunOx = 25;
-    let gunOy = -3;
+    let gunOx = 14;
+    let gunOy = 0;
 
     let carCx = player.x + player.w/2;
     let carCy = player.y + player.h/2;
@@ -487,7 +487,8 @@ player.draw = () => {
     let mouseAngle = Math.atan2(canvas.mousePos.y - guny-1, canvas.mousePos.x - gunx-19) * 180 / pi;
 
     // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
-    canvas.drawImage(gun, gunx, guny, gun.width*2, gun.height*2, mouseAngle);
+    canvas.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, mouseAngle, gunx, guny);
+    // canvas.drawRect(gunx, guny, 1,1, "red");
 
 }   
 
