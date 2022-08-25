@@ -14,15 +14,17 @@ image-rendering: -webkit-crisp-edges;
 image-rendering: pixelated;
 cursor: none;
 }
-@media screen and (max-width: 1200px) {
-#gameCanvas {
-    /* maintain the game's aspect ratio */
-    width: 100%;
-    height: auto;
-}
+/* if the canvas can't fit the screen, shrink it, maintaining the aspect ratio */
+
+@media screen and (max-height: 800px) {
+    #gameCanvas {
+        width: auto;
+        height: 100%;
+    }
 }
 </style>
 <canvas width="600" height="400" id="gameCanvas">
 </canvas>
 <script id="fontScript" src="./letters.js"></script>
+<script src="./l.js"></script>
 <script src="./game.js"></script>

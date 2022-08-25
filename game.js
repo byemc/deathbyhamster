@@ -15,6 +15,7 @@ var bullets = [];
 var hitboxes = [];
 var id = 0;
 var pi = Math.PI;
+var customLevel = document.location.hash;
 
 class Canvas {
     constructor(id) {
@@ -238,6 +239,9 @@ class Entity {
     draw () {
 
     }
+    intersects(other) {
+        return (this.x < other.x + other.w && this.x + this.w > other.x && this.y < other.y + other.h && this.y + this.h > other.y)
+    }
 }
 
 class Room {
@@ -275,13 +279,13 @@ class Room {
     }
 
     keyDown(key) {
-        console.log(key);
-    }
-    keyPressed(key) {
         // console.log(key);
     }
-    keyUp(key) {
+    keyHeld(key) {
         // console.log(key);
+    }
+    click(x, y) {
+        // console.log(x, y);
     }
 
     start() {
@@ -291,7 +295,7 @@ class Room {
 }
 
 // INIT CANVAS
-var fIndex = fntINDEX;
+var fIndex = fntINDEX; // in letters.js
 var canvas = new Canvas('gameCanvas');
 // check if the canvas is supported
 if(!canvas.ctx) {
@@ -311,11 +315,8 @@ var images = {
         "ingame": "./assets/aimerthing.png",
         "cursor": "./cursor.png"
     },
-    "background": {
-        "floor": "./assets/flor.png",
-    },
-    "tileset": {
-        "tiles":"./t.png",
+    "level": {
+        "tileset": "./t.png"
     },
     "player": {
         "debugarrow": "./assets/arrow.png",
@@ -324,9 +325,19 @@ var images = {
     }
 };
 
+var loader = new Room("loader");
+var loadingText = "Loading...";
+var loadingError = 0;
+loader.drawGUI = () => {
+    canvas.drawText(loadingText, canvas.width / 2, canvas.height / 2, 2, 2, "white", "middle");
+    if (loadingError) {
+        canvas.drawText(loadingErrorText, canvas.width / 2, canvas.height / 2 + 20, 1, 1, "red", "middle");
+    }
+}
+var rooms = [];
 
-let loadedImages = 0;
-let totalImages = 0;
+var loadedImages = 0;
+var totalImages = 0;
 
 // count the total number of images to load
 for (let key in images) {
@@ -335,10 +346,9 @@ for (let key in images) {
     }
 }
 
-canvas.drawText(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, 1,1, "white", "center");
+loadingText = `Loading...`;
 
-canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-canvas.drawText(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, 1 ,1, "white", "center");
+loadingText = `Loading images (${loadedImages} / ${totalImages})`
 
 
 // after all images are loaded, and no errors occured, start the game
@@ -349,16 +359,17 @@ for (var key in images) {
         var IMG = new Image();
         IMG.addEventListener('load', () => {
             loadedImages++;
-            canvas.drawFont(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+            loadingText = `Loading images (${loadedImages} / ${totalImages})`
             if (loadedImages == totalImages) {
-                gameStart = true;
-                canvas.drawFont(`Loading...`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+                loader.step = () => {
+                    cRoom = rooms[1];
+                }
+                loadingText = "Loaded! Please wait...";
             }
         });
-        IMG.addEventListener('error', () => {
-            gameStart = false;
-            canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-            canvas.drawFont(`Error loading image ${images[key][subkey]}`, canvas.width / 2, canvas.height / 2 + 45, "red", "center");
+        IMG.addEventListener('error', (e) => {
+            loadingError = 1;
+            loadingErrorText = `Error loading image ${e.target.src}`;
         } );
         IMG.src = images[key][subkey];
 
@@ -366,11 +377,18 @@ for (var key in images) {
         images[key][subkey] = IMG;
         
         // draw the loading text by drawing a rectangle over the previous text, and drawing the new text
-        canvas.drawRect(canvas.width / 2 - 100, canvas.height / 2 + 30, 200, 50, "#1c1c1c");
-        canvas.drawFont(`Loading images (${loadedImages} / ${totalImages})`, canvas.width / 2, canvas.height / 2 + 45, "white", "center");
+        loadingText = `Loading images (${loadedImages} / ${totalImages})`
         
     }
 }
+
+var levels = [
+    {
+        "name": "The First One",
+        "data": `@**1"""!""!#"!$"!%"!&""&""'""#""$""%"##!#$!#%!#&!$&!%&!&&!&%!&$!&#!%#!$#!$$!$%!%%!%$!`,
+        "tile": images.level.tileset,
+    }
+]
 
 hamsterRef = {
     "file": images.player.car,
@@ -400,11 +418,39 @@ hamsterRef = {
     }
 }
 
+var levelRef = {
+    "file": images.level.tileset,
+    "default": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32,
+    },
+    "tiles": [
+        {
+        },
+        {
+            "x": 32,
+        },
+        {
+            "x": 64,
+        },
+    ]
+}
+
+for (let tile of levelRef.tiles) {
+    // if the tile is missing properties from the default, add them
+    for (let key in levelRef.default) {
+        if (!tile[key]) {
+            tile[key] = levelRef.default[key];
+        }
+    }
+}
+
 console.debug(images)
 var targFPS = 60;
 var frame = 0;
 
-var rooms = [];
 
 var menu = new Room("menu");
 
@@ -422,6 +468,7 @@ const nextRoom = () => {
         roomI = 0;
     }
     cRoom = rooms[roomI];
+    cRoom.start();
 }
 
 const prevRoom = () => {
@@ -431,6 +478,7 @@ const prevRoom = () => {
         roomI = rooms.length - 1;
     }
     cRoom = rooms[roomI];
+    cRoom.start();
 }
 
 const setRoom = (roomI) => {
@@ -440,8 +488,12 @@ const setRoom = (roomI) => {
 menu.keyDown = (key) => {
     nextRoom();
 }
+menu.click = (x, y) => {
+    nextRoom();
+}
 
 var gameRoom = new Room("Game");
+gameRoom.level = levels[0];
 var player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 5;
@@ -454,7 +506,6 @@ player.x = canvas.width/2;
 player.y = canvas.height/2;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
-console.debug(`player.x: ${player.x}; player.y: ${player.y}; player.w: ${player.w}; player.h: ${player.h}`);
 
 player.step = () => {
     // move in this.direction, which is an angle in degrees
@@ -478,19 +529,48 @@ player.draw = () => {
     let carCx = player.x + player.w/2;
     let carCy = player.y + player.h/2;
     
-
     // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
     let gunx = carCx - gunOx * Math.cos(player.direction * pi / 180) - gunOy * Math.sin(player.direction * pi / 180);
     let guny = carCy - gunOx * Math.sin(player.direction * pi / 180) + gunOy * Math.cos(player.direction * pi / 180);
 
     // get the angle between the gun and the mouse
-    let mouseAngle = Math.atan2(canvas.mousePos.y - guny, canvas.mousePos.x - gunx) * 180 / pi;
+    player.aim = Math.atan2(canvas.mousePos.y - guny, canvas.mousePos.x - gunx) * 180 / pi;
 
     // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
-    canvas.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, mouseAngle, gunx, guny); // these two vars at the end are where the gun's center is placed
+    canvas.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
     // canvas.drawRect(gunx, guny, 1,1, "red");
 
 }   
+
+player.shoot = () => {
+    // shoot a bullet
+    let bullet = new Entity("Bullet", player.x+(player.w/2), player.y+(player.h/2));
+    bullet.speed = 20;
+    bullet.direction = player.aim;
+    
+    bullet.step = () => {
+        // for each step, check if it's path intersects with any other entity
+        for (let i = 0; i < cRoom.objects.length; i++) {
+            let ent = cRoom.objects[i];
+            if (ent != bullet && ent.intersects(bullet)) {
+                // if it does, remove the bullet and the entity unless it's the player
+                if (ent != player) {
+                    cRoom.objects.splice(i, 1);
+                    cRoom.objects.splice(cRoom.objects.indexOf(bullet), 1);
+                }
+                return;
+            }
+        }
+        // if it doesn't, move the bullet
+        bullet.x += bullet.speed * Math.cos(bullet.direction * pi / 180);
+        bullet.y += bullet.speed * Math.sin(bullet.direction * pi / 180);
+    }
+    bullet.draw = () => {
+        canvas.drawRect(bullet.x, bullet.y, 2,2, "white");
+    }
+    cRoom.spawn(bullet);
+}
+
 
 gameRoom.spawn(player);
 
@@ -521,31 +601,80 @@ gameRoom.keyDown = (key) => {
             player.direction = 0;
         }
     }
+    if (key == "Space") {
+        player.shoot();
+    }
+}
+gameRoom.keyHeld = (key) => {
+    if (key == "ArrowUp" || key == "KeyW") {
+        player.speed += player.accel*1.9;
+        if (player.speed > player.maxSpeed) {
+            player.speed = player.maxSpeed;
+        }
+    }
+    if (key == "ArrowDown" || key == "KeyS") {
+        player.speed -= player.accel*1.53;
+        if (player.speed < -player.maxSpeed) {
+            player.speed = -player.maxSpeed;
+        }
+    }
+    if (key == "ArrowLeft" || key == "KeyA") {
+        player.direction -= 2.5;
+        if (player.direction < 0) {
+            player.direction = 360;
+        }
+    }
+    if (key == "ArrowRight" || key == "KeyD") {
+        player.direction += 2.5;
+        if (player.direction > 360) {
+            player.direction = 0;
+        }
+    }
+}
+gameRoom.click = (e) => {
+    player.shoot();
 }
 
-
-gameRoom.drawGUI = () => {
-    // canvas.drawText("Test", cRoom.w/2, cRoom.h/2-25, 2, 2, "white", "middle", "middle");
+gameRoom.start = () => {
+    gameRoom.level = load_level(gameRoom.level.data);
+    if (customLevel) {
+        gameRoom.level = load_level(customLevel);
+    }
 }
 
+gameRoom.draw = () => {
+    for (let tile of gameRoom.level.m) {
+        // [index, x, y]
+        canvas.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, tile[0]*32, 0, 32, 32);
+    }
+    
+    for (let i = 0; i < cRoom.objects.length; i++) {
+        cRoom.objects[i].draw();
+    }
+}
+
+rooms.push(loader)
 rooms.push(menu);
 rooms.push(gameRoom);
 var roomI = 0;
 var cRoom = rooms[roomI];
 
 var keysPressed = {};
+var keysLastPressed = {};
 
 document.addEventListener('keydown', (e) => {
     keysPressed[e.code] = true;
 });
 document.addEventListener('keyup', (e) => {
     keysPressed[e.code] = false;
+    keysLastPressed[e.code] = false;
 } );
 
 var lastTime = 0;
 
 var mse = {x: 0, y: 0};
 var lastClick = {x: 0, y: 0};
+var clicked = false;
 
 canvas.canvas.addEventListener('mousemove', (e) => {
     mse = canvas.getMousePos(e);
@@ -554,6 +683,8 @@ canvas.canvas.addEventListener('mousemove', (e) => {
 canvas.canvas.addEventListener("click", (e) => {
     console.log(e);
     lastClick = canvas.getMousePos(e);
+    mse = canvas.getMousePos(e);
+    clicked = true;
 });
 
 var gameLoop = setInterval(() => {
@@ -561,12 +692,21 @@ var gameLoop = setInterval(() => {
     canvas.trueHeight = canvas.canvas.offsetHeight;
     canvas.scale = canvas.trueWidth / canvas.width;
     frame++;
-    canvas.fill("#afafaf");
+    canvas.fill("#70B894");
 
     for (let key in keysPressed) {
         if (keysPressed[key]) {
-            cRoom.keyDown(key);
+            if (!keysLastPressed[key]) {
+                cRoom.keyDown(key);
+                keysLastPressed[key] = true;
+            } else if (keysLastPressed[key]) {
+                cRoom.keyHeld(key);
+            }
         }
+    }
+    if (clicked) {
+        cRoom.click(lastClick.x, lastClick.y);
+        clicked = false;
     }
     
     cRoom.step();
@@ -575,19 +715,20 @@ var gameLoop = setInterval(() => {
 
     /* BEDUG INFO */
     canvas.drawText(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 10, 10, 1, 1, "white", "left", "top");
-    switch (cRoom.name) {
-        case "menu":
-            canvas.drawText(`WidthHeight:${canvas.width} ${canvas.height}`, 10, 30, 1, 1, "white", "left", "top");
-            canvas.drawText(`trueWidthHeight:${canvas.trueWidth} ${canvas.trueHeight}`, 10, 50, 1, 1, "white", "left", "top");
-            canvas.drawText(`Scale:${canvas.scale}`, 10, 70, 1, 1, "white", "left", "top");
-            break;
-        case "Game":
-            canvas.drawText(`PlayerXY:${player.x},${player.y}`, 10, 25, 1, 1, "white", "left", "top");
-            // also show speed, rounded to 2 decimal places
-            canvas.drawText(`Speed:${Math.round(player.speed*100)/100}`, 10, 40, 1, 1, "white", "left", "top");
-            canvas.drawText(`Direction:${player.direction}`, 10, 50, 1, 1, "white", "left", "top");
-            break;
-    }
+    // switch (cRoom.name) {
+    //     case "menu":
+    //     case "loader":
+    //         canvas.drawText(`WidthHeight:${canvas.width} ${canvas.height}`, 10, 30, 1, 1, "white", "left", "top");
+    //         canvas.drawText(`trueWidthHeight:${canvas.trueWidth} ${canvas.trueHeight}`, 10, 50, 1, 1, "white", "left", "top");
+    //         canvas.drawText(`Scale:${canvas.scale}`, 10, 70, 1, 1, "white", "left", "top");
+    //         break;
+    //     case "Game":
+    //         canvas.drawText(`PlayerXY:${player.x},${player.y}`, 10, 25, 1, 1, "white", "left", "top");
+    //         // also show speed, rounded to 2 decimal places
+    //         canvas.drawText(`Speed:${Math.round(player.speed*100)/100}`, 10, 40, 1, 1, "white", "left", "top");
+    //         canvas.drawText(`Direction:${player.direction}`, 10, 50, 1, 1, "white", "left", "top");
+    //         break;
+    // }
 
     switch (cRoom.name) {
         case "menu":
@@ -598,6 +739,5 @@ var gameLoop = setInterval(() => {
             break;
     }
     lastTime = Date.now();
-
 
 } , 1000/targFPS); // 60 fps
