@@ -45,8 +45,8 @@ class Canvas {
           scaleX = this.canvas.width / rect.width,    // relationship bitmap vs. element for x
           scaleY = this.canvas.height / rect.height;  // relationship bitmap vs. element for y
 
-        this.mousePos.x = (evt.clientX - rect.left) * scaleX;
-        this.mousePos.y = (evt.clientY - rect.top) * scaleY;
+        this.mousePos.x = ((evt.clientX - rect.left) * scaleX) + this.camera.x;
+        this.mousePos.y = ((evt.clientY - rect.top) * scaleY) + this.camera.y;
       
         return {
           x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
@@ -65,18 +65,14 @@ class Canvas {
     // Drawing
     drawImg(img, x,y,w,h, direction=0, originx=x+w/2, originy=y+h/2) {
         this.ctx.save();
-        this.ctx.translate(originx, originy);
+        this.ctx.translate(originx-this.camera.x, originy-this.camera.y);
         this.ctx.rotate(direction * pi/180);
-        this.ctx.drawImage(img, -w/2, -h/2, w, h);
+        this.ctx.drawImage(img, (-w/2), -h/2, w, h);
         this.ctx.restore();
     }
-
-    drawImgRotated(img, x,y,w,h, direction=0, originx=x+w/2, originy=y+h/2) {
-    }
-
     sliceImage(img, x, y, w, h, cropX, cropY, cropW, cropH, direction=0) {
         this.ctx.save();
-        this.ctx.translate(x+w/2, y+h/2);
+        this.ctx.translate((x+w/2)-this.camera.x, (y+h/2)-this.camera.y);
         this.ctx.rotate(direction * pi/180);
         this.ctx.drawImage(img, cropX, cropY, cropW, cropH, -w/2, -h/2, w, h);
         this.ctx.restore();
@@ -426,23 +422,28 @@ var levelRef = {
         "w": 32,
         "h": 32,
     },
-    "tiles": [
-        {
+    "0":    { // tile 0 (blank)
         },
-        {
+    "1":    { // tile 1 (floor)
             "x": 32,
         },
-        {
+    "2":    { // tile 2 (wall)
             "x": 64,
         },
-    ]
+    "3":    { // player spawn (floor)
+            "x": 32,
+        },
+    "4":    { // human spawn (floor)
+            "x": 32,
+        }
 }
 
-for (let tile of levelRef.tiles) {
-    // if the tile is missing properties from the default, add them
-    for (let key in levelRef.default) {
-        if (!tile[key]) {
-            tile[key] = levelRef.default[key];
+for (let i; i < levelRef.length; i++) {
+    tile = levelRef[i];
+    // if there are missing properties, add it
+    for (let key in tile) {
+        if (!tile.hasOwnProperty(key)) {
+            levelRef[i][key] = levelRef.default[key];
         }
     }
 }
@@ -459,7 +460,7 @@ testImage.src = "./assets/arrow.png";
 
 menu.drawGUI = () => {
     canvas.drawText("Death by Hamster", canvas.width/2, canvas.height/2-25, 2, 2, "white", "middle", "middle");
-    canvas.drawText("Press any key to start", canvas.width/2, canvas.height/2+25, 1, 1, "white", "middle", "middle");
+    canvas.drawText("Press ENTER", canvas.width/2, canvas.height/2+25, 1, 1, "white", "middle", "top");
 }
 const nextRoom = () => {
     // move to the next room
@@ -486,10 +487,9 @@ const setRoom = (roomI) => {
     cRoom = rooms[roomI];
 }
 menu.keyDown = (key) => {
-    nextRoom();
-}
-menu.click = (x, y) => {
-    nextRoom();
+    if (key == "Enter") {
+        nextRoom();
+    }
 }
 
 var gameRoom = new Room("Game");
@@ -513,6 +513,10 @@ player.step = () => {
     player.y += player.speed * Math.sin(player.direction * pi / 180);
 
     player.speed *= 0.009;
+
+    // keep the camera centered on the player
+    canvas.setCamera(player.x - canvas.width/2, player.y - canvas.height/2);
+
 }
 
 console.log(player);
@@ -532,6 +536,8 @@ player.draw = () => {
     // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
     let gunx = carCx - gunOx * Math.cos(player.direction * pi / 180) - gunOy * Math.sin(player.direction * pi / 180);
     let guny = carCy - gunOx * Math.sin(player.direction * pi / 180) + gunOy * Math.cos(player.direction * pi / 180);
+    player.gx = gunx
+    player.gy = guny
 
     // get the angle between the gun and the mouse
     player.aim = Math.atan2(canvas.mousePos.y - guny, canvas.mousePos.x - gunx) * 180 / pi;
@@ -544,7 +550,7 @@ player.draw = () => {
 
 player.shoot = () => {
     // shoot a bullet
-    let bullet = new Entity("Bullet", player.x+(player.w/2), player.y+(player.h/2));
+    let bullet = new Entity("Bullet", player.gx, player.gy);
     bullet.speed = 20;
     bullet.direction = player.aim;
     
@@ -644,8 +650,11 @@ gameRoom.start = () => {
 
 gameRoom.draw = () => {
     for (let tile of gameRoom.level.m) {
-        // [index, x, y]
-        canvas.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, tile[0]*32, 0, 32, 32);
+        // [tile, x, y]
+        let tileref = levelRef[tile[0]];
+        console.log(tileref);
+        canvas.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, levelRef[tile[0]],0,32,32);
+        canvas.drawFont(tile[0], tile[1]*32+16, tile[2]*32+16, "white", "middle");
     }
     
     for (let i = 0; i < cRoom.objects.length; i++) {
@@ -714,21 +723,7 @@ var gameLoop = setInterval(() => {
     cRoom.drawGUI(); 
 
     /* BEDUG INFO */
-    canvas.drawText(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 10, 10, 1, 1, "white", "left", "top");
-    // switch (cRoom.name) {
-    //     case "menu":
-    //     case "loader":
-    //         canvas.drawText(`WidthHeight:${canvas.width} ${canvas.height}`, 10, 30, 1, 1, "white", "left", "top");
-    //         canvas.drawText(`trueWidthHeight:${canvas.trueWidth} ${canvas.trueHeight}`, 10, 50, 1, 1, "white", "left", "top");
-    //         canvas.drawText(`Scale:${canvas.scale}`, 10, 70, 1, 1, "white", "left", "top");
-    //         break;
-    //     case "Game":
-    //         canvas.drawText(`PlayerXY:${player.x},${player.y}`, 10, 25, 1, 1, "white", "left", "top");
-    //         // also show speed, rounded to 2 decimal places
-    //         canvas.drawText(`Speed:${Math.round(player.speed*100)/100}`, 10, 40, 1, 1, "white", "left", "top");
-    //         canvas.drawText(`Direction:${player.direction}`, 10, 50, 1, 1, "white", "left", "top");
-    //         break;
-    // }
+    canvas.drawText(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+canvas.camera.x, 0+canvas.camera.y, 1, 1, "#fafafa", "left", "top");
 
     switch (cRoom.name) {
         case "menu":
