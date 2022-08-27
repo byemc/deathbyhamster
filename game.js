@@ -381,7 +381,7 @@ for (var key in images) {
 var levels = [
     {
         "name": "The First One",
-        "data": `@**1"""!""!#"!$"!%"!&""&""'""#""$""%"##!#$!#%!#&!$&!%&!&&!&%!&$!&#!%#!$#!$$!$%!%%!%$!`,
+        "data": `@R>1!""!#"!$"!&""""#""$""%""&""&#"&$"&%"&&"&'"%'"$'"#'""'"!'""#!##!$#!%#!%$!%%!%&!$&!#&!"%!!%""$!#$!$$!$%!#%!"&!`,
         "tile": images.level.tileset,
     }
 ]
@@ -422,28 +422,23 @@ var levelRef = {
         "w": 32,
         "h": 32,
     },
-    "0":    { // tile 0 (blank)
+    "tiles": [
+        {
         },
-    "1":    { // tile 1 (floor)
+        {
             "x": 32,
         },
-    "2":    { // tile 2 (wall)
+        {
             "x": 64,
         },
-    "3":    { // player spawn (floor)
-            "x": 32,
-        },
-    "4":    { // human spawn (floor)
-            "x": 32,
-        }
+    ]
 }
 
-for (let i; i < levelRef.length; i++) {
-    tile = levelRef[i];
-    // if there are missing properties, add it
-    for (let key in tile) {
-        if (!tile.hasOwnProperty(key)) {
-            levelRef[i][key] = levelRef.default[key];
+for (let tile of levelRef.tiles) {
+    // if the tile is missing properties from the default, add them
+    for (let key in levelRef.default) {
+        if (!tile[key]) {
+            tile[key] = levelRef.default[key];
         }
     }
 }
@@ -650,11 +645,8 @@ gameRoom.start = () => {
 
 gameRoom.draw = () => {
     for (let tile of gameRoom.level.m) {
-        // [tile, x, y]
-        let tileref = levelRef[tile[0]];
-        console.log(tileref);
-        canvas.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, levelRef[tile[0]],0,32,32);
-        canvas.drawFont(tile[0], tile[1]*32+16, tile[2]*32+16, "white", "middle");
+        // [index, x, y]
+        canvas.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, tile[0]*32, 0, 32, 32);
     }
     
     for (let i = 0; i < cRoom.objects.length; i++) {
