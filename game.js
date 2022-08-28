@@ -11,22 +11,20 @@ const log = (logType, msg) => {
 
 // CONFIG
 const fontStack = '"Comic Sans MS"';
-var bullets = [];
-var hitboxes = [];
 var id = 0;
 var pi = Math.PI;
 var customLevel = document.location.hash;
 
 class Canvas {
     constructor(id) {
-        this.canvas = document.getElementById(id);
-        this.ctx = this.canvas.getContext('2d');
-        this.width = this.canvas.width;
-        this.height = this.canvas.height;
+        this.c = document.getElementById(id);
+        this.ctx = this.c.getContext('2d');
+        this.w = this.c.width;
+        this.h = this.c.height;
         // get the width and height of the canvas from CSS
-        this.trueWidth = this.canvas.offsetWidth;
-        this.trueHeight = this.canvas.offsetHeight;
-        this.scale = this.trueWidth / this.width;
+        this.tW = this.c.offsetWidth;
+        this.tH = this.c.offsetHeight;
+        this.scale = this.tW / this.w;
         this.camera = {x: 0, y: 0};
 
         this.mousePos = {x: 0, y: 0};
@@ -36,14 +34,14 @@ class Canvas {
 
     fill(color) {
         this.ctx.fillStyle = color;
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        this.ctx.fillRect(0, 0, this.w, this.h);
     }
 
     // Mouse position crap
     getMousePos(evt) {
-        var rect = this.canvas.getBoundingClientRect(), // abs. size of element
-          scaleX = this.canvas.width / rect.width,    // relationship bitmap vs. element for x
-          scaleY = this.canvas.height / rect.height;  // relationship bitmap vs. element for y
+        var rect = this.c.getBoundingClientRect(), // abs. size of element
+          scaleX = this.c.width / rect.width,    // relationship bitmap vs. element for x
+          scaleY = this.c.height / rect.height;  // relationship bitmap vs. element for y
 
         this.mousePos.x = ((evt.clientX - rect.left) * scaleX) + this.camera.x;
         this.mousePos.y = ((evt.clientY - rect.top) * scaleY) + this.camera.y;
@@ -100,7 +98,7 @@ class Canvas {
         this.ctx.fillText(string, x-this.camera.x, y-this.camera.y);
     }
 
-    drawText(string, x, y, scaley, scalex, color, align="start", vAliign="top", ops={}) {
+    dT(string, x, y, scaley, scalex, color, align="start", vAliign="top", ops={}) {
 
         // console.log(ops);
 
@@ -167,7 +165,7 @@ class Canvas {
                 }
             }
 
-            char = fIndex[char];
+            char = fI[char];
             if (char == undefined) {
                 // leave a blank space
             } else {
@@ -190,6 +188,10 @@ class Canvas {
 
             nextOffset = (7 * scalex);
 
+        }
+
+        return {
+            "w": strLength
         }
 
     }
@@ -248,8 +250,8 @@ class Room {
         this.objects = [];
         this.hitboxes = [];
         this.background = [];
-        this.w = canvas.width;
-        this.h = canvas.height;
+        this.w = c.w;
+        this.h = c.h;
     }
 
     spawn(entity) {
@@ -291,19 +293,19 @@ class Room {
 }
 
 // INIT CANVAS
-var fIndex = fntINDEX; // in letters.js
-var canvas = new Canvas('gameCanvas');
+var fI = fntINDEX; // in letters.js
+var c = new Canvas('gameCanvas');
 // check if the canvas is supported
-if(!canvas.ctx) {
+if(!c.ctx) {
     alert("Your browser does not support the canvas element");
 }
-gameCtx = canvas.ctx;
-canvas.fill("#1c1c1c");
-canvas.setFont(fontStack);
+gameCtx = c.ctx;
+c.fill("#1c1c1c");
+c.setFont(fontStack);
 gameCtx.imageSmoothingEnabled = false;
 var gameStart = false;
 
-canvas.drawText("Death By Hamster", canvas.width / 2, canvas.height / 2 - 40, 2, 2, "white", "middle");
+c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
 
 // Load images
 var images = {
@@ -318,6 +320,9 @@ var images = {
         "debugarrow": "./assets/arrow.png",
         "car": "./hamster.png",
         "gun": "./gun.png",
+    },
+    "ui": {
+        "a": "./arw.png" // arrow
     }
 };
 
@@ -325,9 +330,9 @@ var loader = new Room("loader");
 var loadingText = "Loading...";
 var loadingError = 0;
 loader.drawGUI = () => {
-    canvas.drawText(loadingText, canvas.width / 2, canvas.height / 2, 2, 2, "white", "middle");
+    c.dT(loadingText, c.w / 2, c.h / 2, 2, 2, "white", "middle");
     if (loadingError) {
-        canvas.drawText(loadingErrorText, canvas.width / 2, canvas.height / 2 + 20, 1, 1, "red", "middle");
+        c.dT(loadingErrorText, c.w / 2, c.h / 2 + 20, 1, 1, "red", "middle");
     }
 }
 var rooms = [];
@@ -450,12 +455,33 @@ var frame = 0;
 
 var menu = new Room("menu");
 
-var testImage = new Image();
-testImage.src = "./assets/arrow.png";
+menu.s = 0
+menu.o = [
+    {
+        "t": "Play",
+        "a": _=>{ setRoom(2) } // go to game room
+    },
+    {
+        "t": "Editor",
+        "a": _=>{ setRoom(3) } // go to level editor
+    }
+]
+
 
 menu.drawGUI = () => {
-    canvas.drawText("Death by Hamster", canvas.width/2, canvas.height/2-25, 2, 2, "white", "middle", "middle");
-    canvas.drawText("Press ENTER", canvas.width/2, canvas.height/2+25, 1, 1, "white", "middle", "top");
+    c.dT("Death by Hamster", c.w/2, c.h/2-25, 4, 4, "white", "middle", "middle");
+    c.dT("W/Up or S/Down to select", c.w/2, c.h/2, 1,1,"gray","middle","middle");
+    c.dT("Space or ENTER to activate", c.w/2, c.h/2+8, 1,1,"gray","middle","middle")
+    for (let o in menu.o) {
+        let txt = c.dT(`${menu.o[o].t}`, c.w/2, (c.h/2+50)+(o*20), 2,2,"#fff","middle","top");
+        if (menu.s == o) {
+            let a = images.ui.a;
+            let ap = ((c.w/2)-(txt.w/2))-a.width-4;
+            let ap2 = ((c.w/2)+(txt.w/2))+a.width-4;
+            c.drawImg(a, ap, (c.h/2+50)+(o*20), a.width*2, a.height*2)
+            c.drawImg(a, ap2, (c.h/2+50)+(o*20), a.width*2, a.height*2, 180)
+        }
+    }
 }
 const nextRoom = () => {
     // move to the next room
@@ -480,10 +506,23 @@ const prevRoom = () => {
 const setRoom = (roomI) => {
     // set the current room to the given room
     cRoom = rooms[roomI];
+    cRoom.start();
 }
 menu.keyDown = (key) => {
-    if (key == "Enter") {
-        nextRoom();
+    if (key == "ArrowUp" || key == "KeyW") {
+        menu.s -= 1
+        if (menu.s < 0) {
+            menu.s = menu.o.length-1
+        }
+    }
+    if (key == "ArrowDown" || key == "KeyS") {
+        menu.s += 1
+        if (menu.s > menu.o.length-1) {
+            menu.s = 0
+        }
+    }
+    if (key == "Space" || key == "Enter") {
+        menu.o[menu.s].a();
     }
 }
 
@@ -497,8 +536,8 @@ player.accel = 1;
 player.sprite = images.player.car;
 console.debug(player.sprite);
 player.crop = hamsterRef.nolights;
-player.x = canvas.width/2;
-player.y = canvas.height/2;
+player.x = c.w/2;
+player.y = c.h/2;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
 
@@ -510,7 +549,7 @@ player.step = () => {
     player.speed *= 0.009;
 
     // keep the camera centered on the player
-    canvas.setCamera(player.x - canvas.width/2, player.y - canvas.height/2);
+    c.setCamera(player.x - c.w/2, player.y - c.h/2);
 
 }
 
@@ -518,7 +557,7 @@ console.log(player);
 
 player.draw = () => {
     // draw this.sprite at this.x, this.y
-    canvas.sliceImage(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction); 
+    c.sliceImage(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction);
     // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
     let gun = images.player.gun;
@@ -535,10 +574,10 @@ player.draw = () => {
     player.gy = guny
 
     // get the angle between the gun and the mouse
-    player.aim = Math.atan2(canvas.mousePos.y - guny, canvas.mousePos.x - gunx) * 180 / pi;
+    player.aim = Math.atan2(c.mousePos.y - guny, c.mousePos.x - gunx) * 180 / pi;
 
     // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
-    canvas.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
+    c.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
     // canvas.drawRect(gunx, guny, 1,1, "red");
 
 }   
@@ -567,7 +606,7 @@ player.shoot = () => {
         bullet.y += bullet.speed * Math.sin(bullet.direction * pi / 180);
     }
     bullet.draw = () => {
-        canvas.drawRect(bullet.x, bullet.y, 2,2, "white");
+        c.drawRect(bullet.x, bullet.y, 2,2, "white");
     }
     cRoom.spawn(bullet);
 }
@@ -646,7 +685,7 @@ gameRoom.start = () => {
 gameRoom.draw = () => {
     for (let tile of gameRoom.level.m) {
         // [index, x, y]
-        canvas.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, tile[0]*32, 0, 32, 32);
+        c.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, tile[0]*32, 0, 32, 32);
     }
     
     for (let i = 0; i < cRoom.objects.length; i++) {
@@ -654,9 +693,15 @@ gameRoom.draw = () => {
     }
 }
 
+let editor = new Room("Editor");
+editor.drawGUI = _=>{
+    c.dT("bye", c.w/2,c.h/2,1,1,"#fff")
+}
+
 rooms.push(loader)
 rooms.push(menu);
 rooms.push(gameRoom);
+rooms.push(editor)
 var roomI = 0;
 var cRoom = rooms[roomI];
 
@@ -677,23 +722,23 @@ var mse = {x: 0, y: 0};
 var lastClick = {x: 0, y: 0};
 var clicked = false;
 
-canvas.canvas.addEventListener('mousemove', (e) => {
-    mse = canvas.getMousePos(e);
+c.c.addEventListener('mousemove', (e) => {
+    mse = c.getMousePos(e);
 } );
 
-canvas.canvas.addEventListener("click", (e) => {
+c.c.addEventListener("click", (e) => {
     console.log(e);
-    lastClick = canvas.getMousePos(e);
-    mse = canvas.getMousePos(e);
+    lastClick = c.getMousePos(e);
+    mse = c.getMousePos(e);
     clicked = true;
 });
 
 var gameLoop = setInterval(() => {
-    canvas.trueWidth = canvas.canvas.offsetWidth;
-    canvas.trueHeight = canvas.canvas.offsetHeight;
-    canvas.scale = canvas.trueWidth / canvas.width;
+    c.tW = c.c.offsetWidth;
+    c.tH = c.c.offsetHeight;
+    c.scale = c.tW / c.w;
     frame++;
-    canvas.fill("#70B894");
+    c.fill("#151f1f");
 
     for (let key in keysPressed) {
         if (keysPressed[key]) {
@@ -715,14 +760,14 @@ var gameLoop = setInterval(() => {
     cRoom.drawGUI(); 
 
     /* BEDUG INFO */
-    canvas.drawText(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+canvas.camera.x, 0+canvas.camera.y, 1, 1, "#fafafa", "left", "top");
+    c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
 
     switch (cRoom.name) {
         case "menu":
-            canvas.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
+            c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
             break;
         case "Game":
-            canvas.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
+            c.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
             break;
     }
     lastTime = Date.now();
