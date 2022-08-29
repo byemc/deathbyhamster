@@ -13,7 +13,20 @@ const log = (logType, msg) => {
 const fontStack = '"Comic Sans MS"';
 var id = 0;
 var pi = Math.PI;
-var customLevel = document.location.hash;
+gPar = (key) => {
+
+    // Address of the current window
+    let address = window.location.search
+
+    // Returns a URLSearchParams object instance
+    let parameterList = new URLSearchParams(address)
+
+    // Returning the respected value associated
+    // with the provided key
+    return parameterList.get(key)
+}
+
+var customLv = gPar("lv");
 
 class Canvas {
     constructor(id) {
@@ -209,7 +222,7 @@ class Canvas {
     }
 
     // Camera stuff
-    mvCamera(x, y, s) {
+    mvCamera(x, y) {
         this.camera.x += x;
         this.camera.y += y;
     }
@@ -284,6 +297,9 @@ class Room {
     }
     click(x, y) {
         // console.log(x, y);
+    }
+    mHeld(x,y){
+
     }
 
     start() {
@@ -385,33 +401,35 @@ for (var key in images) {
 
 var levels = [
     {
-        "name": "The First One",
-        "data": `@R>1!""!#"!$"!&""""#""$""%""&""&#"&$"&%"&&"&'"%'"$'"#'""'"!'""#!##!$#!%#!%$!%%!%&!$&!#&!"%!!%""$!#$!$$!$%!#%!"&!`,
-        "tile": images.level.tileset,
-    }
+        "name": "Tutorial",
+        "data": "[[1,1,2],[1,1,3],[5,1,4],[1,1,1],[2,0,3],[2,0,2],[2,0,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[5,4,0],[5,6,0],[5,5,0],[5,7,0],[6,8,0],[0,9,0],[0,10,0],[2,8,1],[2,8,2],[2,8,3],[8,8,4],[5,7,4],[5,5,4],[5,6,4],[5,4,4],[5,2,4],[5,3,4],[7,0,4],[1,2,3],[9,2,2],[1,2,1],[1,3,1],[1,3,2],[1,3,3],[1,4,3],[1,4,2],[1,4,1],[1,5,1],[1,5,2],[1,5,3],[1,6,3],[10,6,2],[1,6,1],[1,7,1],[1,7,2],[1,7,3]]"
+    },
+    {
+        "name": "First Floor"
+    },
 ]
 
 hamsterRef = {
     "file": images.player.car,
-    "nolights": {
+    "nl": {
         "x": 1,
         "y": 1,
         "w": 32,
         "h": 16,
     },
-    "brake": {
+    "b": {
         "x": 35,
         "y": 1,
         "w": 32,
         "h": 16,
     },
-    "brakereverse": {
+    "br": {
         "x": 1,
         "y": 20,
         "w": 32,
         "h": 16,
     },
-    "reverse": {
+    "r": {
         "x": 35,
         "y": 20,
         "w": 32,
@@ -436,6 +454,30 @@ var levelRef = {
         {
             "x": 64,
         },
+        {
+            "x": 96,
+        },
+        {
+            "x": 128,
+        },
+        {
+            "x": 160,
+        },
+        {
+            "x": 192,
+        },
+        {
+            "x": 224,
+        },
+        {
+            "x": 256,
+        },
+        { // player
+            "x": 32
+        },
+        { // human
+            "x": 32
+        }
     ]
 }
 
@@ -459,7 +501,7 @@ menu.s = 0
 menu.o = [
     {
         "t": "Play",
-        "a": _=>{ setRoom(2) } // go to game room
+        "a": _=>{ setRoom(4) } // go to game room
     },
     {
         "t": "Editor",
@@ -535,9 +577,9 @@ player.direction = 0;
 player.accel = 1;
 player.sprite = images.player.car;
 console.debug(player.sprite);
-player.crop = hamsterRef.nolights;
-player.x = c.w/2;
-player.y = c.h/2;
+player.crop = hamsterRef.nl;
+player.x = 0;
+player.y = 0;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
 
@@ -561,7 +603,7 @@ player.draw = () => {
     // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
     let gun = images.player.gun;
-    let gunOx = 14;
+    let gunOx = 13;
     let gunOy = 0;
 
     let carCx = player.x + player.w/2;
@@ -675,17 +717,24 @@ gameRoom.click = (e) => {
     player.shoot();
 }
 
-gameRoom.start = () => {
-    gameRoom.level = load_level(gameRoom.level.data);
-    if (customLevel) {
-        gameRoom.level = load_level(customLevel);
+gameRoom.start = () =>{
+    if (customLv) {
+        gameRoom.level = customLv
+    }
+    gameRoom.level = JSON.parse(gameRoom.level);
+
+    for (let tile of gameRoom.level) {
+        if (tile[0] === 9) {
+            player.x = tile[1]*64
+            player.y = tile[2]*64
+        }
     }
 }
 
 gameRoom.draw = () => {
-    for (let tile of gameRoom.level.m) {
+    for (let tile of gameRoom.level) {
         // [index, x, y]
-        c.sliceImage(levelRef.file, tile[1]*32, tile[2]*32, 32,32, tile[0]*32, 0, 32, 32);
+        c.sliceImage(levelRef.file, (tile[1]*32)*2, (tile[2]*32)*2, 32*2,32*2, levelRef.tiles[tile[0]].x, 0, 32, 32);
     }
     
     for (let i = 0; i < cRoom.objects.length; i++) {
@@ -694,16 +743,158 @@ gameRoom.draw = () => {
 }
 
 let editor = new Room("Editor");
-editor.drawGUI = _=>{
-    c.dT("bye", c.w/2,c.h/2,1,1,"#fff")
+editor.i = 0;
+editor.t = levelRef;
+editor.l = []
+editor.n = "LV1"
+editor.saving = false
+editor.sa = 0
+
+editor.start = _=>{
+    editor.dPos = [15,65]
+}
+editor.draw = _=>{
+    for (let tile of editor.l) {
+        // [index, x, y]
+        c.sliceImage(levelRef.file, (tile[1]*32)+editor.dPos[0], tile[2]*32+editor.dPos[1], 32,32, tile[0]*32, 0, 32, 32);
+        c.drawRect(editor.dPos[0], editor.dPos[1], 1,1, "red")
+    }
+}
+editor.step = _=>{
+    if (editor.i < 0) {
+        editor.i = levelRef.tiles.length-1;
+    }
+    if (editor.i > levelRef.tiles.length-1) {
+        editor.i = 0;
+    }
+}
+editor.generate = _=>{
+    editor.saving=1
+    let encodedLevel = encodeURIComponent(JSON.stringify(editor.l))
+    if (encodedLevel != editor.data){
+        encodedLevel = "?lvl=" + encodedLevel;
+        document.getElementById("leveltext").innerText = encodedLevel
+    }
+    editor.data = encodedLevel;
+    editor.saving=0;
+    editor.sa = 1;
+}
+editor.click = (x,y)=>{
+    if (y < 50) {
+        if (x> 516 && y < 50) {
+            if (!editor.saving){
+                editor.generate()
+            }
+            editor.saveclick = true
+        }
+    }
+     else {
+        x = Math.floor((x-editor.dPos[0])/32)
+        y = Math.floor((y-editor.dPos[1])/32)
+        // console.debug(x,y)
+        for (let t in editor.l) {
+            if (editor.l[t][1] == x && editor.l[t][2] == y) {
+                editor.l[t] = [editor.i, x, y];
+                return;
+            }
+        }
+        editor.l.push([editor.i,x,y])
+        editor.sa = 0
+    }
+}
+editor.keyHeld = (key) => {
+    switch (key) {
+        case "KeyW":
+        case "ArrowUp":
+            editor.dPos[1] += 4
+            break;
+        case "KeyS":
+        case "ArrowDown":
+            editor.dPos[1] -= 4
+            break;
+        case "KeyA":
+        case "ArrowLeft":
+            editor.dPos[0] += 4
+            break;
+        case "KeyD":
+        case "ArrowRight":
+            editor.dPos[0] -= 4
+            break;
+    }
 }
 
-rooms.push(loader)
+editor.drawGUI = _=>{
+    c.drawRect(0,0,c.w,50,"gray")
+    c.dT(`DBH Editor::${editor.n}`, 15,25,2,2,"#fff","start","middle");
+    let s = c.dT(`Save`, c.w-15,25,2,2,"#fff","end","middle");
+    if (c.mousePos.x > (c.w-30)-s.w && c.mousePos.y < 50) {
+        // console.debug((c.w-30)-s.w)
+        c.dT(`Save`, c.w-15,25,2,2,"#e5e5e5","end","middle");
+    }
+    if (editor.sa) {
+        c.dT(`Save`, c.w-15,25,2,2,"#1fdc2f","end","middle");
+    } if (editor.saving) {
+        c.dT(`Save`, c.w-15,25,2,2,"#1fccdc","end","middle");
+    }
+
+    c.sliceImage(editor.t.file, c.mousePos.x+16,c.mousePos.y+16,32,32,32*editor.i,0,32,32);
+}
+
+let lvlS = new Room("Level Select")
+lvlS.s = 0
+lvlS.o = levels
+
+lvlS.drawGUI = () => {
+    c.dT("Death by Hamster", c.w/2, 25, 2, 2, "white", "middle", "top");
+    c.dT("Level Select", c.w/2, 44, 1,1,"gray","middle","middle");
+    for (let o in lvlS.o) {
+        let n = parseInt(o)+1
+        let slice = 15
+        if (n >= 100){
+            let slice = 13;
+        } else if (n >= 10) {
+            let slice = 14;
+        }
+        let txt = c.dT(`${n}.${lvlS.o[o].name.slice(0,slice)}`, 40, (70)+(o*20), 2,2,"#fff");
+        if (lvlS.s == o) {
+            let a = images.ui.a;
+            let ap = (40)-a.width-4;
+            let ap2 = (40+txt.w)+a.width-4;
+            c.drawImg(a, ap, (70)+(o*20), a.width*2, a.height*2)
+            c.drawImg(a, ap2, (70)+(o*20), a.width*2, a.height*2, 180)
+        }
+    }
+    c.drawLine(c.w/2, 60, c.w/2, c.h-20, "white")
+}
+
+lvlS.keyDown = (key) => {
+    if (key == "ArrowUp" || key == "KeyW") {
+        lvlS.s -= 1
+        if (lvlS.s < 0) {
+            lvlS.s = lvlS.o.length-1
+        }
+    }
+    if (key == "ArrowDown" || key == "KeyS") {
+        lvlS.s += 1
+        if (lvlS.s > lvlS.o.length-1) {
+            lvlS.s = 0
+        }
+    }
+    if (key == "Space" || key == "Enter") {
+        gameRoom.level = lvlS.o[lvlS.s].data;
+        setRoom(2)
+    }
+}
+
+rooms.push(loader);
 rooms.push(menu);
 rooms.push(gameRoom);
-rooms.push(editor)
-var roomI = 0;
+rooms.push(editor);
+rooms.push(lvlS);
+var roomI = !gPar("goto") ? 0 : gPar("goto");
+
 var cRoom = rooms[roomI];
+
 
 var keysPressed = {};
 var keysLastPressed = {};
@@ -720,18 +911,36 @@ var lastTime = 0;
 
 var mse = {x: 0, y: 0};
 var lastClick = {x: 0, y: 0};
-var clicked = false;
+var startclicked = false;
+var endclicked = false
 
 c.c.addEventListener('mousemove', (e) => {
     mse = c.getMousePos(e);
 } );
 
-c.c.addEventListener("click", (e) => {
-    console.log(e);
+c.c.addEventListener("mousedown", (e) => {
+    // console.log(e);
     lastClick = c.getMousePos(e);
     mse = c.getMousePos(e);
-    clicked = true;
+    startclicked = true;
 });
+c.c.addEventListener("mouseup", (e)=>{
+    // console.log(e);
+    lastClick = c.getMousePos(e);
+    mse = c.getMousePos(e);
+    endclicked = true;
+})
+
+window.onwheel = (e)=>{
+    if (e.deltaY > 0) {
+        editor.i += 1;
+    }
+    if (e.deltaY < 0) {
+        editor.i -= 1;
+    }
+}
+
+cRoom.start();
 
 var gameLoop = setInterval(() => {
     c.tW = c.c.offsetWidth;
@@ -750,11 +959,11 @@ var gameLoop = setInterval(() => {
             }
         }
     }
-    if (clicked) {
+    if (startclicked) {
         cRoom.click(lastClick.x, lastClick.y);
-        clicked = false;
+        startclicked = false;
     }
-    
+
     cRoom.step();
     cRoom.draw();
     cRoom.drawGUI(); 
@@ -764,6 +973,7 @@ var gameLoop = setInterval(() => {
 
     switch (cRoom.name) {
         case "menu":
+        case "Editor":
             c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
             break;
         case "Game":

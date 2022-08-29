@@ -16,13 +16,24 @@ cursor: none;
 }
 /* if the canvas can't fit the screen, shrink it, maintaining the aspect ratio */
 
+    aside {
+        float:left;
+    }
+    aside pre {
+        color: white;
+    }
+
 @media screen and (max-height: 800px) {
     #gameCanvas {
         width: auto;
         height: 100%;
     }
 }
+
 </style>
+<aside >
+    <pre id="leveltext">    </pre>
+</aside>
 <canvas width="600" height="400" id="gameCanvas">
 </canvas>
 <script id="fontScript" src="./letters.js"></script>
