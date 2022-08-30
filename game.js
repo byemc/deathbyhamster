@@ -444,39 +444,51 @@ var levelRef = {
         "y": 0,
         "w": 32,
         "h": 32,
+        "type": "blank"
     },
     "tiles": [
         {
         },
         {
             "x": 32,
+            "type": "floor"
         },
         {
             "x": 64,
+            "type": "wall"
         },
         {
             "x": 96,
+            "type": "wall"
+
         },
         {
             "x": 128,
+            "type": "wall"
         },
         {
             "x": 160,
+            "type": "wall"
         },
         {
             "x": 192,
+            "type": "wall"
         },
         {
             "x": 224,
+            "type": "wall"
         },
         {
             "x": 256,
+            "type": "wall"
         },
         { // player
-            "x": 32
+            "x": 32,
+            "type": "floor"
         },
         { // human
-            "x": 32
+            "x": 32,
+            "type": "floor"
         }
     ]
 }
@@ -589,6 +601,13 @@ player.step = () => {
     player.y += player.speed * Math.sin(player.direction * pi / 180);
 
     player.speed *= 0.009;
+
+    // check that the player won't go into a wall on the next step, and if so, stop.
+    for (let tile of gameRoom.level) {
+        if (player.x/64 > tile.x && player.x/64 < tile.x + tile.w && player.y/64 > tile.y && player.y/64 < tile.y + tile.h) {
+            player.speed = 0;
+        }
+    }
 
     // keep the camera centered on the player
     c.setCamera(player.x - c.w/2, player.y - c.h/2);
@@ -725,8 +744,56 @@ gameRoom.start = () =>{
 
     for (let tile of gameRoom.level) {
         if (tile[0] === 9) {
-            player.x = tile[1]*64
-            player.y = tile[2]*64
+            player.x = (tile[1]*64)+32
+            player.y = (tile[2]*64)+32
+        }
+        if(tile[0]===10){
+            let checkwall = (tx,ty) => {
+                for (let tile of gameRoom.level) {
+                    if (levelRef.tiles[tile[0]].type == "wall" && tile[1] == tx && tile[2] == ty) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), images.mouse.cursor)
+            pooman.step = _=>{
+                if (pooman.timer<=0){
+                    let director = Math.floor(Math.random()*4)
+                    pooman.direction = director*90;
+                    let tX = Math.floor(pooman.x / 64)
+                    let tY = Math.floor(pooman.y / 64)
+                    if (director === 0){
+                        if (!checkwall(tX,tY-1)){
+                            pooman.y -= 64;
+                        }
+                    }
+                    if (director === 1){
+                        if (!checkwall(tX+1,tY)){
+                            pooman.x += 64;
+                        }
+                    }
+                    if (director === 2){
+                        if (!checkwall(tX,tY+1)){
+                            pooman.y += 64;
+                        }
+                    }
+                    if (director === 3){
+                        if (!checkwall(tX-1,tY)){
+                            pooman.x -= 64;
+                        }
+                    }
+                    pooman.timer = 90;
+                }
+                pooman.timer--;
+            }
+            pooman.draw = _=>{
+                c.drawImage(images.mouse.cursor, pooman.x, pooman.y, 64, 64, pooman.direction);
+                c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
+            }
+            pooman.timer = 90;
+            gameRoom.spawn(pooman);
         }
     }
 }
@@ -849,32 +916,21 @@ lvlS.drawGUI = () => {
     c.dT("Level Select", c.w/2, 44, 1,1,"gray","middle","middle");
     for (let o in lvlS.o) {
         let n = parseInt(o)+1
-        let slice = 15
-        if (n >= 100){
-            let slice = 13;
-        } else if (n >= 10) {
-            let slice = 14;
-        }
-        let txt = c.dT(`${n}.${lvlS.o[o].name.slice(0,slice)}`, 40, (70)+(o*20), 2,2,"#fff");
-        if (lvlS.s == o) {
-            let a = images.ui.a;
-            let ap = (40)-a.width-4;
-            let ap2 = (40+txt.w)+a.width-4;
-            c.drawImg(a, ap, (70)+(o*20), a.width*2, a.height*2)
-            c.drawImg(a, ap2, (70)+(o*20), a.width*2, a.height*2, 180)
+        c.dT(`${n}`, (20)+(32*n), 70, 2, 2, "#fff", "middle", "middle")
+        if (o == lvlS.s) {
+            c.strokeRect((20-14)+(32*n), 70-16, 32, 32, "#fff")
         }
     }
-    c.drawLine(c.w/2, 60, c.w/2, c.h-20, "white")
 }
 
 lvlS.keyDown = (key) => {
-    if (key == "ArrowUp" || key == "KeyW") {
+    if (key == "ArrowUp"||key=="ArrowRight"||key == "KeyW"||key=="KeyD") {
         lvlS.s -= 1
         if (lvlS.s < 0) {
             lvlS.s = lvlS.o.length-1
         }
     }
-    if (key == "ArrowDown" || key == "KeyS") {
+    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyW"|| key == "KeyA") {
         lvlS.s += 1
         if (lvlS.s > lvlS.o.length-1) {
             lvlS.s = 0
