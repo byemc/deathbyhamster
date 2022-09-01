@@ -31,3 +31,4 @@ jobs:
         with:
           directory: .
           output: build
+          add_suffix: false
