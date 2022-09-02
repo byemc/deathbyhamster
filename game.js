@@ -413,7 +413,8 @@ var levels = [
         "data": "[[1,1,2],[1,1,3],[5,1,4],[1,1,1],[2,0,3],[2,0,2],[2,0,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[5,4,0],[5,6,0],[5,5,0],[5,7,0],[6,8,0],[0,9,0],[0,10,0],[2,8,1],[2,8,2],[2,8,3],[8,8,4],[5,7,4],[5,5,4],[5,6,4],[5,4,4],[5,2,4],[5,3,4],[7,0,4],[1,2,3],[9,2,2],[1,2,1],[1,3,1],[1,3,2],[1,3,3],[1,4,3],[1,4,2],[1,4,1],[1,5,1],[1,5,2],[1,5,3],[1,6,3],[10,6,2],[1,6,1],[1,7,1],[1,7,2],[1,7,3]]"
     },
     {
-        "name": "First Floor"
+        "name": "First Floor",
+        "data": "[[1,1,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[6,4,0],[7,4,1],[5,5,1],[5,6,1],[5,7,1],[5,8,1],[5,9,1],[5,10,1],[5,11,1],[5,12,1],[5,13,1],[5,14,1],[5,15,1],[5,16,1],[6,17,1],[2,17,2],[2,17,3],[2,17,4],[2,17,5],[9,2,2],[2,0,1],[2,0,2],[2,0,3],[2,0,4],[2,0,5],[2,0,6],[7,0,7],[5,1,7],[5,2,7],[5,3,7],[5,4,7],[5,5,7],[5,6,7],[5,7,7],[5,8,7],[5,10,7],[5,9,7],[5,12,7],[5,11,7],[5,13,7],[5,15,7],[5,14,7],[5,16,7],[8,17,7],[2,17,6],[1,2,1],[1,3,1],[1,3,2],[1,1,2],[1,1,3],[1,2,3],[1,3,3],[1,6,2],[1,8,4],[1,10,6],[1,11,4],[1,13,2],[1,15,4],[10,13,5],[10,9,5],[10,11,5],[1,12,3],[1,10,3],[1,14,5],[1,12,5],[1,8,6],[1,7,6],[1,4,6],[1,1,4],[1,2,4],[1,4,4],[1,4,3],[1,4,2],[1,5,2],[1,5,3],[1,5,4],[1,10,5],[1,10,4],[1,9,4],[10,9,3],[1,7,3],[1,8,3],[1,7,2],[1,8,2],[1,9,2],[1,10,2],[1,11,2],[10,11,3],[1,12,2],[1,7,5],[1,8,5],[1,6,3],[1,6,4],[1,7,4],[1,6,5],[1,6,6],[1,5,6],[1,4,5],[1,5,5],[1,3,4],[1,3,5],[1,3,6],[1,2,6],[1,2,5],[1,1,5],[1,1,6],[1,9,6],[1,11,6],[1,12,6],[1,13,6],[1,14,6],[1,12,4],[1,13,4],[10,13,3],[1,14,3],[1,14,4],[1,14,2],[1,15,2],[1,15,3],[1,15,5],[1,15,6],[1,16,6],[1,16,5],[1,16,4],[1,16,3],[1,16,2]]"
     },
 ]
 
@@ -503,9 +504,10 @@ var levelRef = {
 
 var humanRef = {
     "file": images.level.human,
-    "bladie": {
-
+    "normie": {
+        "x": 0, "y": 0, "w": 32, "h": 32
     }
+}
 
 
 for (let tile of levelRef.tiles) {
@@ -599,9 +601,9 @@ var gameRoom = new Room("Game");
 gameRoom.level = levels[0];
 var player   = new Entity("Player", 0,0);
 player.speed = 0;
-player.maxSpeed = 5;
+player.maxSpeed = 20;
 player.direction = 0;
-player.accel = 1;
+player.accel = 2.5;
 player.sprite = images.player.car;
 console.debug(player.sprite);
 player.crop = hamsterRef.nl;
@@ -612,9 +614,13 @@ player.h = player.crop.h*2;
 player.oldDir = 0;
 
 player.step = _=> {
+    // move in this.direction, which is an angle in degrees
+    player.x += player.speed * Math.cos(player.direction * pi / 180);
+    player.y += player.speed * Math.sin(player.direction * pi / 180);
+    player.speed *= 0.009;
     // check that the player won't go into a wall on the next step, and if so, stop.
     player.checkpoints = [];
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 6; i++) {
         
         let carCx = player.x + player.w/2;
         let carCy = player.y + player.h/2;
@@ -625,14 +631,28 @@ player.step = _=> {
             pointOx = -32;
         } else if (i==1) {
             pointOx = 32;
+        } else if (i==2){
+            pointOx = -30;
+            pointOy = -15;
+        } else if (i==3){
+            pointOx = -30;
+            pointOy = 15;
+        } else if (i==4){
+            pointOx = 30;
+            pointOy = -15;
+        } else if (i==5){
+            pointOx = 30;
+            pointOy = 15;
         }
-        
+
+
         // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
         let pointX = carCx - pointOx * Math.cos(player.direction * pi / 180) - pointOy * Math.sin(player.direction * pi / 180);
         let pointY = carCy - pointOx * Math.sin(player.direction * pi / 180) + pointOy * Math.cos(player.direction * pi / 180);
 
         player.checkpoints.push({x: pointX, y: pointY});
     }
+
     for (let checkpoint of player.checkpoints) {
         let x = checkpoint.x / 64;
         let y = checkpoint.y / 64;
@@ -640,26 +660,21 @@ player.step = _=> {
             checkpoint.stuck = true;
         }
     }
+
     if (player.checkpoints[0].stuck || player.checkpoints[1].stuck) {
         // move down sideways if stuck
-        let change = player.direction - player.oldDir;
-        player.direction -= change;
-
-        let sChange = player.speed - player.oldSpeed;
-        player.speed -= sChange+0.01;
+        player.direction = player.oldDir;
+        player.x = player.xy[0];
+        player.y = player.xy[1];
+        player.speed -= 0.1;
     }
 
-    // move in this.direction, which is an angle in degrees
-    player.x += player.speed * Math.cos(player.direction * pi / 180);
-    player.y += player.speed * Math.sin(player.direction * pi / 180);
-
-    player.speed *= 0.009;
 
     // keep the camera centered on the player
     c.setCamera(player.x - c.w/2, player.y - c.h/2);
 
     player.oldDir = player.direction;
-    player.oldSpeed = player.speed;
+    player.xy = [player.x, player.y]
 
 }
 
@@ -695,6 +710,8 @@ player.draw = _=> {
         c.drawRect(checkpoint.x, checkpoint.y, 1,1, "black");
 
     }
+
+    c.dT(`${Math.round(player.speed*100000)/100000}` ,player.x, player.y, 1,1, "white")
 
 }   
 
@@ -737,13 +754,13 @@ gameRoom.keyDown = (key) => {
     console.log(key);
 
     if (key == "ArrowUp" || key == "KeyW") {
-        player.speed += player.accel*2;
+        player.speed += player.accel;
         if (player.speed > player.maxSpeed) {
             player.speed = player.maxSpeed;
         }
     }
     if (key == "ArrowDown" || key == "KeyS") {
-        player.speed -= player.accel*1.5;
+        player.speed -= player.accel*.8
         if (player.speed < -player.maxSpeed) {
             player.speed = -player.maxSpeed;
         }
@@ -817,42 +834,48 @@ gameRoom.start = () =>{
         }
         if(tile[0]===10){
 
-            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), images.mouse.cursor)
-            pooman.w = 64
-            pooman.h = 64
+            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), images.level.human)
+            pooman.w = 26*2
+            pooman.h = 16*2
+            pooman.bh = Math.floor(Math.random()*3);
+            pooman.bb = Math.floor(Math.random()*3)
+            pooman.getT=_=>{
+                pooman.tX = Math.floor((pooman.x + pooman.w) / 64)
+                pooman.tY = Math.floor((pooman.y + pooman.h) / 64)
+            }
             pooman.step = _=>{
+                let xy = [pooman.x, pooman.y]
                 if (pooman.timer<=0){
                     let director = Math.floor(Math.random()*4)
                     pooman.direction = director*90;
-                    let tX = Math.floor(pooman.x / 64)
-                    let tY = Math.floor(pooman.y / 64)
                     if (director === 0){
-                        if (!gameRoom.checkwall(tX,tY-1)){
-                            pooman.y -= 64;
-                        }
+                        pooman.y -= pooman.h;
                     }
                     if (director === 1){
-                        if (!gameRoom.checkwall(tX+1,tY)){
-                            pooman.x += 64;
-                        }
+                        pooman.x += pooman.w;
                     }
                     if (director === 2){
-                        if (!gameRoom.checkwall(tX,tY+1)){
-                            pooman.y += 64;
-                        }
+                        pooman.y += pooman.w;
                     }
                     if (director === 3){
-                        if (!gameRoom.checkwall(tX-1,tY)){
-                            pooman.x -= 64;
-                        }
+                        pooman.x -= pooman.h;
                     }
+                    pooman.getT();
+                    if (gameRoom.checkwall(pooman.tX, pooman.tY)){
+                        pooman.x = xy[0]
+                        pooman.y = xy[1]
+                        pooman.step()
+                        return
+                    }
+
                     pooman.timer = 90;
                 }
                 pooman.timer--;
             }
             pooman.draw = _=>{
-                c.drawImage(images.mouse.cursor, pooman.x, pooman.y, 64, 64, pooman.direction);
-                // c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
+                c.sliceImage(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bb*pooman.w/2, 0, pooman.w/2, pooman.h/2, pooman.direction);
+                c.sliceImage(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bh*pooman.w/2, pooman.h/2, pooman.w/2, pooman.h/2, pooman.direction);
+                c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
             }
             pooman.timer = 90;
             gameRoom.spawn(pooman);
@@ -875,7 +898,6 @@ let editor = new Room("Editor");
 editor.i = 0;
 editor.t = levelRef;
 editor.l = []
-editor.n = "LV1"
 editor.saving = false
 editor.sa = 0
 
