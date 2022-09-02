@@ -53,17 +53,17 @@ class Canvas {
     // Mouse position crap
     getMousePos(evt) {
         var rect = this.c.getBoundingClientRect(), // abs. size of element
-          scaleX = this.c.width / rect.width,    // relationship bitmap vs. element for x
-          scaleY = this.c.height / rect.height;  // relationship bitmap vs. element for y
+        scaleX = this.c.width / rect.width,    // relationship bitmap vs. element for x
+        scaleY = this.c.height / rect.height;  // relationship bitmap vs. element for y
 
         this.mousePos.x = ((evt.clientX - rect.left) * scaleX) + this.camera.x;
         this.mousePos.y = ((evt.clientY - rect.top) * scaleY) + this.camera.y;
-      
+    
         return {
-          x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
-          y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
+        x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
+        y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
         }
-      }
+    }
 
     translate(x, y) {
         this.ctx.translate(x, y);
@@ -122,10 +122,18 @@ class Canvas {
         // console.log(chars);
         
         let charWidth = 7
-        let strLength = (chars.length * charWidth - 1) * scalex; 
+        let charOff = 0;
+        // check if there's an odd number of chars
+        if (chars.length % 2 == 1) {
+             charOff = 1
+        }
+        let strLength = (chars.length * charWidth - charOff) * scalex; 
 
         let charHeight = 7
         let strHeight = (charHeight * scaley);
+        if (strHeight % 2 == 1) {
+            strHeight += 1;
+        }
 
         switch(align) {
             case "start":
@@ -326,14 +334,14 @@ c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
 // Load images
 var images = {
     "mouse": {
-        "ingame": "./assets/aimerthing.png",
+        "ingame": "./aimerthing.png",
         "cursor": "./cursor.png"
     },
     "level": {
-        "tileset": "./t.png"
+        "tileset": "./t.png",
+        "human": "./human.png"
     },
     "player": {
-        "debugarrow": "./assets/arrow.png",
         "car": "./hamster.png",
         "gun": "./gun.png",
     },
@@ -493,6 +501,13 @@ var levelRef = {
     ]
 }
 
+var humanRef = {
+    "file": images.level.human,
+    "bladie": {
+
+    }
+
+
 for (let tile of levelRef.tiles) {
     // if the tile is missing properties from the default, add them
     for (let key in levelRef.default) {
@@ -594,31 +609,66 @@ player.x = 0;
 player.y = 0;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
+player.oldDir = 0;
 
-player.step = () => {
+player.step = _=> {
+    // check that the player won't go into a wall on the next step, and if so, stop.
+    player.checkpoints = [];
+    for (let i = 0; i < 2; i++) {
+        
+        let carCx = player.x + player.w/2;
+        let carCy = player.y + player.h/2;
+        
+        let pointOx = 0;
+        let pointOy = 0;
+        if (i==0) {
+            pointOx = -32;
+        } else if (i==1) {
+            pointOx = 32;
+        }
+        
+        // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
+        let pointX = carCx - pointOx * Math.cos(player.direction * pi / 180) - pointOy * Math.sin(player.direction * pi / 180);
+        let pointY = carCy - pointOx * Math.sin(player.direction * pi / 180) + pointOy * Math.cos(player.direction * pi / 180);
+
+        player.checkpoints.push({x: pointX, y: pointY});
+    }
+    for (let checkpoint of player.checkpoints) {
+        let x = checkpoint.x / 64;
+        let y = checkpoint.y / 64;
+        if (gameRoom.checkwall(x, y)) {
+            checkpoint.stuck = true;
+        }
+    }
+    if (player.checkpoints[0].stuck || player.checkpoints[1].stuck) {
+        // move down sideways if stuck
+        let change = player.direction - player.oldDir;
+        player.direction -= change;
+
+        let sChange = player.speed - player.oldSpeed;
+        player.speed -= sChange+0.01;
+    }
+
     // move in this.direction, which is an angle in degrees
     player.x += player.speed * Math.cos(player.direction * pi / 180);
     player.y += player.speed * Math.sin(player.direction * pi / 180);
 
     player.speed *= 0.009;
 
-    // check that the player won't go into a wall on the next step, and if so, stop.
-    for (let tile of gameRoom.level) {
-        if (player.x/64 > tile.x && player.x/64 < tile.x + tile.w && player.y/64 > tile.y && player.y/64 < tile.y + tile.h) {
-            player.speed = 0;
-        }
-    }
-
     // keep the camera centered on the player
     c.setCamera(player.x - c.w/2, player.y - c.h/2);
+
+    player.oldDir = player.direction;
+    player.oldSpeed = player.speed;
 
 }
 
 console.log(player);
 
-player.draw = () => {
+player.draw = _=> {
     // draw this.sprite at this.x, this.y
     c.sliceImage(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction);
+    // c.dT(`${player.x/64} ${player.y/64}`, player.x, player.y, 1,1,"white","middle","middle");
     // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
     let gun = images.player.gun;
@@ -641,6 +691,11 @@ player.draw = () => {
     c.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
     // canvas.drawRect(gunx, guny, 1,1, "red");
 
+    for (let checkpoint of player.checkpoints) {
+        c.drawRect(checkpoint.x, checkpoint.y, 1,1, "black");
+
+    }
+
 }   
 
 player.shoot = () => {
@@ -648,6 +703,8 @@ player.shoot = () => {
     let bullet = new Entity("Bullet", player.gx, player.gy);
     bullet.speed = 20;
     bullet.direction = player.aim;
+    bullet.w = 2;
+    bullet.h = 2;
     
     bullet.step = () => {
         // for each step, check if it's path intersects with any other entity
@@ -655,11 +712,12 @@ player.shoot = () => {
             let ent = cRoom.objects[i];
             if (ent != bullet && ent.intersects(bullet)) {
                 // if it does, remove the bullet and the entity unless it's the player
+                console.log(ent);
                 if (ent != player) {
                     cRoom.objects.splice(i, 1);
                     cRoom.objects.splice(cRoom.objects.indexOf(bullet), 1);
+                    return;
                 }
-                return;
             }
         }
         // if it doesn't, move the bullet
@@ -667,7 +725,7 @@ player.shoot = () => {
         bullet.y += bullet.speed * Math.sin(bullet.direction * pi / 180);
     }
     bullet.draw = () => {
-        c.drawRect(bullet.x, bullet.y, 2,2, "white");
+        c.drawRect(bullet.x, bullet.y, bullet.w,bullet.h, "#2f2f2f");
     }
     cRoom.spawn(bullet);
 }
@@ -735,6 +793,16 @@ gameRoom.keyHeld = (key) => {
 gameRoom.click = (e) => {
     player.shoot();
 }
+gameRoom.checkwall = (tx,ty) => {
+    tx = Math.floor(tx);
+    ty = Math.floor(ty);
+    for (let tile of gameRoom.level) {
+        if (levelRef.tiles[tile[0]].type == "wall" && tile[1] == tx && tile[2] == ty) {
+            return true;
+        }
+    }
+    return false;
+}
 
 gameRoom.start = () =>{
     if (customLv) {
@@ -748,16 +816,10 @@ gameRoom.start = () =>{
             player.y = (tile[2]*64)+32
         }
         if(tile[0]===10){
-            let checkwall = (tx,ty) => {
-                for (let tile of gameRoom.level) {
-                    if (levelRef.tiles[tile[0]].type == "wall" && tile[1] == tx && tile[2] == ty) {
-                        return true;
-                    }
-                }
-                return false;
-            }
 
             let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), images.mouse.cursor)
+            pooman.w = 64
+            pooman.h = 64
             pooman.step = _=>{
                 if (pooman.timer<=0){
                     let director = Math.floor(Math.random()*4)
@@ -765,22 +827,22 @@ gameRoom.start = () =>{
                     let tX = Math.floor(pooman.x / 64)
                     let tY = Math.floor(pooman.y / 64)
                     if (director === 0){
-                        if (!checkwall(tX,tY-1)){
+                        if (!gameRoom.checkwall(tX,tY-1)){
                             pooman.y -= 64;
                         }
                     }
                     if (director === 1){
-                        if (!checkwall(tX+1,tY)){
+                        if (!gameRoom.checkwall(tX+1,tY)){
                             pooman.x += 64;
                         }
                     }
                     if (director === 2){
-                        if (!checkwall(tX,tY+1)){
+                        if (!gameRoom.checkwall(tX,tY+1)){
                             pooman.y += 64;
                         }
                     }
                     if (director === 3){
-                        if (!checkwall(tX-1,tY)){
+                        if (!gameRoom.checkwall(tX-1,tY)){
                             pooman.x -= 64;
                         }
                     }
@@ -790,7 +852,7 @@ gameRoom.start = () =>{
             }
             pooman.draw = _=>{
                 c.drawImage(images.mouse.cursor, pooman.x, pooman.y, 64, 64, pooman.direction);
-                c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
+                // c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
             }
             pooman.timer = 90;
             gameRoom.spawn(pooman);
@@ -855,7 +917,7 @@ editor.click = (x,y)=>{
             editor.saveclick = true
         }
     }
-     else {
+    else {
         x = Math.floor((x-editor.dPos[0])/32)
         y = Math.floor((y-editor.dPos[1])/32)
         // console.debug(x,y)
@@ -996,46 +1058,55 @@ window.onwheel = (e)=>{
     }
 }
 
+try {
 cRoom.start();
 
-var gameLoop = setInterval(() => {
-    c.tW = c.c.offsetWidth;
-    c.tH = c.c.offsetHeight;
-    c.scale = c.tW / c.w;
-    frame++;
-    c.fill("#151f1f");
-
-    for (let key in keysPressed) {
-        if (keysPressed[key]) {
-            if (!keysLastPressed[key]) {
-                cRoom.keyDown(key);
-                keysLastPressed[key] = true;
-            } else if (keysLastPressed[key]) {
-                cRoom.keyHeld(key);
+    var gameLoop = setInterval(() => {
+        c.tW = c.c.offsetWidth;
+        c.tH = c.c.offsetHeight;
+        c.scale = c.tW / c.w;
+        frame++;
+        c.fill("#151f1f");
+    
+        for (let key in keysPressed) {
+            if (keysPressed[key]) {
+                if (!keysLastPressed[key]) {
+                    cRoom.keyDown(key);
+                    keysLastPressed[key] = true;
+                } else if (keysLastPressed[key]) {
+                    cRoom.keyHeld(key);
+                }
             }
         }
-    }
-    if (startclicked) {
-        cRoom.click(lastClick.x, lastClick.y);
-        startclicked = false;
-    }
-
-    cRoom.step();
-    cRoom.draw();
-    cRoom.drawGUI(); 
-
-    /* BEDUG INFO */
-    c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
-
-    switch (cRoom.name) {
-        case "menu":
-        case "Editor":
-            c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
-            break;
-        case "Game":
-            c.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
-            break;
-    }
-    lastTime = Date.now();
-
-} , 1000/targFPS); // 60 fps
+        if (startclicked) {
+            cRoom.click(lastClick.x, lastClick.y);
+            startclicked = false;
+        }
+    
+        cRoom.step();
+        cRoom.draw();
+        cRoom.drawGUI(); 
+    
+        /* BEDUG INFO */
+        c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
+    
+        switch (cRoom.name) {
+            case "menu":
+            case "Editor":
+                c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
+                break;
+            case "Game":
+                c.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
+                break;
+        }
+        lastTime = Date.now();
+    
+    } , 1000/targFPS); // 60 fps
+    
+} catch (error) {
+    c.fill("#1c1c1c");
+    c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
+    c.dT(`${error}`, c.w/2, c.h / 2, 1, 1, "red", "middle");
+    c.dT(`pls let Bye know by emailing him via`, c.w /2, c.h / 2 + 40, 1, 1, "white", "middle");
+    c.dT('bye[at]byecorps.com', c.w / 2, c.h / 2 + 60, 2, 2, "white", "middle");
+}
