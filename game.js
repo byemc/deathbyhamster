@@ -603,7 +603,7 @@ var player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 20;
 player.direction = 0;
-player.accel = 2.5;
+player.accel = 2;
 player.sprite = images.player.car;
 console.debug(player.sprite);
 player.crop = hamsterRef.nl;
@@ -617,7 +617,6 @@ player.step = _=> {
     // move in this.direction, which is an angle in degrees
     player.x += player.speed * Math.cos(player.direction * pi / 180);
     player.y += player.speed * Math.sin(player.direction * pi / 180);
-    player.speed *= 0.009;
     // check that the player won't go into a wall on the next step, and if so, stop.
     player.checkpoints = [];
     for (let i = 0; i < 6; i++) {
@@ -651,6 +650,9 @@ player.step = _=> {
         let pointY = carCy - pointOx * Math.sin(player.direction * pi / 180) + pointOy * Math.cos(player.direction * pi / 180);
 
         player.checkpoints.push({x: pointX, y: pointY});
+
+        player.speed *= 0.9;
+
     }
 
     for (let checkpoint of player.checkpoints) {
@@ -736,6 +738,10 @@ player.shoot = () => {
                     return;
                 }
             }
+
+        }
+        if (gameRoom.checkwall(bullet.x/64,bullet.y/64)) {
+            cRoom.objects.splice(cRoom.objects.indexOf(bullet), 1);
         }
         // if it doesn't, move the bullet
         bullet.x += bullet.speed * Math.cos(bullet.direction * pi / 180);
