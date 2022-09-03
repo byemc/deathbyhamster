@@ -448,6 +448,17 @@ const fntNeg = [
    [],
 ];
 
+const fntExclaim = [
+    [, , 1, 1],
+    [, , 1, 1],
+    [, , 1, 1],
+    [, 1, 1, 1],
+    [, 1, 1],
+    [],
+    [, 1, 1],
+];
+
+
 
 const fntINDEX = {
    'A': fntA, 'B': fntB, 'C': fntC, 'D': fntD, 'E': fntE, 'F': fntF,
@@ -456,6 +467,6 @@ const fntINDEX = {
    'S': fntS, 'T': fntT, 'U': fntU, 'V': fntV, 'W': fntW, 'X': fntX,
    'Y': fntY, 'Z': fntZ, '1': fnt1, '2': fnt2, '3': fnt3, '4': fnt4,
    '5': fnt5, '6': fnt6, '7': fnt7, '8': fnt8, '9': fnt9, '0': fnt0,
-   '/': fntSlash, ':': fntColon, '.': fntDot, '-': fntNeg,
+   '/': fntSlash, ':': fntColon, '.': fntDot, '-': fntNeg, '!': fntExclaim
 }
 

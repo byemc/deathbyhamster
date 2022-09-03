@@ -3,16 +3,11 @@
     Theme: death
 */
 
-// Functions for my little game engine thing
-const log = (logType, msg) => {
-    console.log(`[${logType}] ${msg}`);
-}
-
-
 // CONFIG
 const fontStack = '"Comic Sans MS"';
-var id = 0;
-var pi = Math.PI;
+let id = 0;
+const pi = Math.PI;
+let o = {showFPS:true}
 gPar = (key) => {
 
     // Address of the current window
@@ -26,7 +21,7 @@ gPar = (key) => {
     return parameterList.get(key)
 }
 
-var customLv = gPar("lv");
+const customLv = gPar("lv");
 
 class Canvas {
     constructor(id) {
@@ -37,11 +32,9 @@ class Canvas {
         // get the width and height of the canvas from CSS
         this.tW = this.c.offsetWidth;
         this.tH = this.c.offsetHeight;
-        this.scale = this.tW / this.w;
         this.camera = {x: 0, y: 0};
 
         this.mousePos = {x: 0, y: 0};
-        this.realMousePos = {x: 0, y: 0};
 
     }
 
@@ -52,9 +45,9 @@ class Canvas {
 
     // Mouse position crap
     getMousePos(evt) {
-        var rect = this.c.getBoundingClientRect(), // abs. size of element
-        scaleX = this.c.width / rect.width,    // relationship bitmap vs. element for x
-        scaleY = this.c.height / rect.height;  // relationship bitmap vs. element for y
+        const rect = this.c.getBoundingClientRect(), // abs. size of element
+            scaleX = this.c.width / rect.width,    // relationship bitmap vs. element for x
+            scaleY = this.c.height / rect.height;  // relationship bitmap vs. element for y
 
         this.mousePos.x = ((evt.clientX - rect.left) * scaleX) + this.camera.x;
         this.mousePos.y = ((evt.clientY - rect.top) * scaleY) + this.camera.y;
@@ -103,12 +96,6 @@ class Canvas {
     strokeRect(x, y, w, h, color) {
         this.ctx.strokeStyle = color;
         this.ctx.strokeRect(x-this.camera.x, y-this.camera.y, w, h);
-    }
-
-    drawFont(string, x, y, color, align="start") {
-        this.ctx.fillStyle = color;
-        this.ctx.textAlign = align;
-        this.ctx.fillText(string, x-this.camera.x, y-this.camera.y);
     }
 
     dT(string, x, y, scaley, scalex, color, align="start", vAliign="top", ops={}) {
@@ -269,8 +256,7 @@ class Room {
         id += 1;
         this.name = name;
         this.objects = [];
-        this.hitboxes = [];
-        this.background = [];
+        this.background = "#151f1f";
         this.w = c.w;
         this.h = c.h;
     }
@@ -324,7 +310,7 @@ if(!c.ctx) {
     alert("Your browser does not support the canvas element");
 }
 gameCtx = c.ctx;
-c.fill("#1c1c1c");
+c.fill("#151f1f");
 c.setFont(fontStack);
 gameCtx.imageSmoothingEnabled = false;
 var gameStart = false;
@@ -410,11 +396,11 @@ for (var key in images) {
 var levels = [
     {
         "name": "Tutorial",
-        "data": "[[1,1,2],[1,1,3],[5,1,4],[1,1,1],[2,0,3],[2,0,2],[2,0,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[5,4,0],[5,6,0],[5,5,0],[5,7,0],[6,8,0],[0,9,0],[0,10,0],[2,8,1],[2,8,2],[2,8,3],[8,8,4],[5,7,4],[5,5,4],[5,6,4],[5,4,4],[5,2,4],[5,3,4],[7,0,4],[1,2,3],[9,2,2],[1,2,1],[1,3,1],[1,3,2],[1,3,3],[1,4,3],[1,4,2],[1,4,1],[1,5,1],[1,5,2],[1,5,3],[1,6,3],[10,6,2],[1,6,1],[1,7,1],[1,7,2],[1,7,3]]"
+        "data": "[[1,1,2],[1,1,3],[5,1,4],[1,1,1],[2,0,3],[2,0,2],[2,0,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[5,4,0],[5,6,0],[5,5,0],[5,7,0],[6,8,0],[1,2,3],[1,3,3],[1,4,3],[1,6,3],[1,7,3],[1,7,2],[1,7,1],[1,6,1],[1,5,2],[1,6,2],[1,5,3],[1,5,1],[1,4,1],[1,4,2],[9,2,2],[1,3,2],[1,3,1],[1,2,1],[7,0,4],[5,2,4],[1,8,3],[1,8,4],[1,7,4],[1,9,4],[1,8,5],[1,9,5],[1,7,5],[1,9,3],[1,8,2],[1,6,4],[1,10,4],[1,10,5],[10,10,6],[1,9,6],[1,8,6],[6,6,5],[6,7,6],[6,5,4],[7,5,5],[7,6,6],[7,8,1],[6,9,1],[7,9,2],[6,10,2],[7,10,3],[5,3,4],[5,4,4],[2,7,7],[5,11,3],[5,12,3],[6,13,3],[2,13,4],[2,13,5],[2,13,6],[2,13,7],[2,13,8],[2,13,9],[2,7,8],[2,7,9],[7,7,10],[8,13,10],[5,12,10],[5,11,10],[5,10,10],[5,9,10],[5,8,10],[1,8,8],[1,8,9],[1,8,7],[1,9,7],[1,10,7],[1,11,7],[1,11,6],[1,11,4],[1,11,5],[1,12,4],[1,12,6],[1,12,5],[1,12,7],[1,12,8],[1,12,9],[1,11,9],[1,11,8],[1,10,8],[1,9,8],[1,9,9],[1,10,9]]"
     },
     {
         "name": "First Floor",
-        "data": "[[1,1,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[6,4,0],[7,4,1],[5,5,1],[5,6,1],[5,7,1],[5,8,1],[5,9,1],[5,10,1],[5,11,1],[5,12,1],[5,13,1],[5,14,1],[5,15,1],[5,16,1],[6,17,1],[2,17,2],[2,17,3],[2,17,4],[2,17,5],[9,2,2],[2,0,1],[2,0,2],[2,0,3],[2,0,4],[2,0,5],[2,0,6],[7,0,7],[5,1,7],[5,2,7],[5,3,7],[5,4,7],[5,5,7],[5,6,7],[5,7,7],[5,8,7],[5,10,7],[5,9,7],[5,12,7],[5,11,7],[5,13,7],[5,15,7],[5,14,7],[5,16,7],[8,17,7],[2,17,6],[1,2,1],[1,3,1],[1,3,2],[1,1,2],[1,1,3],[1,2,3],[1,3,3],[1,6,2],[1,8,4],[1,10,6],[1,11,4],[1,13,2],[1,15,4],[10,13,5],[10,9,5],[10,11,5],[1,12,3],[1,10,3],[1,14,5],[1,12,5],[1,8,6],[1,7,6],[1,4,6],[1,1,4],[1,2,4],[1,4,4],[1,4,3],[1,4,2],[1,5,2],[1,5,3],[1,5,4],[1,10,5],[1,10,4],[1,9,4],[10,9,3],[1,7,3],[1,8,3],[1,7,2],[1,8,2],[1,9,2],[1,10,2],[1,11,2],[10,11,3],[1,12,2],[1,7,5],[1,8,5],[1,6,3],[1,6,4],[1,7,4],[1,6,5],[1,6,6],[1,5,6],[1,4,5],[1,5,5],[1,3,4],[1,3,5],[1,3,6],[1,2,6],[1,2,5],[1,1,5],[1,1,6],[1,9,6],[1,11,6],[1,12,6],[1,13,6],[1,14,6],[1,12,4],[1,13,4],[10,13,3],[1,14,3],[1,14,4],[1,14,2],[1,15,2],[1,15,3],[1,15,5],[1,15,6],[1,16,6],[1,16,5],[1,16,4],[1,16,3],[1,16,2]]"
+        "data": "[[1,1,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[6,4,0],[7,4,1],[5,5,1],[12,6,1],[5,7,1],[5,8,1],[5,9,1],[5,10,1],[5,11,1],[5,12,1],[5,13,1],[5,14,1],[5,15,1],[5,16,1],[6,17,1],[2,17,2],[2,17,3],[2,17,4],[2,17,5],[9,2,2],[2,0,1],[2,0,2],[2,0,3],[2,0,4],[2,0,5],[2,0,6],[7,0,7],[5,1,7],[5,2,7],[5,3,7],[5,4,7],[5,5,7],[11,6,7],[5,7,7],[5,8,7],[5,10,7],[5,9,7],[5,12,7],[5,11,7],[5,13,7],[5,15,7],[5,14,7],[5,16,7],[8,17,7],[2,17,6],[1,2,1],[1,3,1],[1,3,2],[1,1,2],[1,1,3],[1,2,3],[1,3,3],[13,6,2],[1,8,4],[1,10,6],[1,11,4],[1,13,2],[1,15,4],[10,13,5],[10,9,5],[10,11,5],[1,12,3],[1,10,3],[1,14,5],[1,12,5],[1,8,6],[1,7,6],[1,4,6],[1,1,4],[1,2,4],[1,4,4],[1,4,3],[1,4,2],[1,5,2],[1,5,3],[1,5,4],[1,10,5],[1,10,4],[1,9,4],[10,9,3],[1,7,3],[1,8,3],[1,7,2],[1,8,2],[1,9,2],[1,10,2],[1,11,2],[10,11,3],[1,12,2],[1,7,5],[1,8,5],[1,6,3],[1,6,4],[1,7,4],[1,6,5],[3,6,6],[1,5,6],[1,4,5],[1,5,5],[1,3,4],[1,3,5],[1,3,6],[1,2,6],[1,2,5],[1,1,5],[1,1,6],[1,9,6],[1,11,6],[1,12,6],[1,13,6],[1,14,6],[1,12,4],[1,13,4],[10,13,3],[1,14,3],[1,14,4],[1,14,2],[1,15,2],[1,15,3],[1,15,5],[1,15,6],[1,16,6],[1,16,5],[1,16,4],[1,16,3],[1,16,2]]"
     },
 ]
 
@@ -498,7 +484,19 @@ var levelRef = {
         { // human
             "x": 32,
             "type": "floor"
-        }
+        },
+        {
+            "x": 352,
+            "type": "wall"
+        },
+        {
+            "x": 384,
+            "type": "wall"
+        },
+        {
+            "x": 416,
+            "type": "wall"
+        },
     ]
 }
 
@@ -535,6 +533,10 @@ menu.o = [
     {
         "t": "Editor",
         "a": _=>{ setRoom(3) } // go to level editor
+    },
+    {
+        "t": "Settings",
+        "a": _=>{ setRoom(5) }
     }
 ]
 
@@ -598,14 +600,13 @@ menu.keyDown = (key) => {
 }
 
 var gameRoom = new Room("Game");
-gameRoom.level = levels[0];
+gameRoom.humans = 0
 var player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 20;
 player.direction = 0;
-player.accel = 2;
+player.accel = 1.5;
 player.sprite = images.player.car;
-console.debug(player.sprite);
 player.crop = hamsterRef.nl;
 player.x = 0;
 player.y = 0;
@@ -735,6 +736,7 @@ player.shoot = () => {
                 if (ent != player) {
                     cRoom.objects.splice(i, 1);
                     cRoom.objects.splice(cRoom.objects.indexOf(bullet), 1);
+                    gameRoom.humans -= 1;
                     return;
                 }
             }
@@ -833,6 +835,11 @@ gameRoom.start = () =>{
     }
     gameRoom.level = JSON.parse(gameRoom.level);
 
+    if (gameRoom.tutorial) {
+        player.accel = .7
+    }
+
+
     for (let tile of gameRoom.level) {
         if (tile[0] === 9) {
             player.x = (tile[1]*64)+32
@@ -885,16 +892,41 @@ gameRoom.start = () =>{
             }
             pooman.timer = 90;
             gameRoom.spawn(pooman);
+            gameRoom.humans += 1;
         }
     }
 }
 
+gameRoom.step = _=> {
+    if (gameRoom.humans == 0){
+        setRoom(0)
+    }
+    // step all objects in the room
+    for (let obj of gameRoom.objects) {
+        obj.step();
+    }
+}
+
 gameRoom.draw = () => {
+
     for (let tile of gameRoom.level) {
         // [index, x, y]
         c.sliceImage(levelRef.file, (tile[1]*32)*2, (tile[2]*32)*2, 32*2,32*2, levelRef.tiles[tile[0]].x, 0, 32, 32);
     }
-    
+
+    if (gameRoom.tutorial) {
+        c.dT("Welcome to", 3*64, 64+15, 1, 1, "black");
+        c.dT("Death by Hamster", (3*64)+32, 64+25, 2,2, "black", "middle");
+
+        c.dT("Use WASD/arrows to move", 128, 2*64, 1,1, "black");
+        c.dT("Aim with the mouse and click to shoot!", 128, 2*64+10, 1,1, "black");
+
+        c.dT("As a member of the hamster uprising,", 6*64, 3*64+25, 1,1, "black");
+        c.dT("you might want to kill any humans", 6*64, 3*64+35, 1,1, "black");
+        c.dT("you find!", 10*64-16, 3*64+45, 1,1, "black", "right");
+
+
+    }
     for (let i = 0; i < cRoom.objects.length; i++) {
         cRoom.objects[i].draw();
     }
@@ -927,10 +959,15 @@ editor.step = _=>{
 }
 editor.generate = _=>{
     editor.saving=1
-    let encodedLevel = encodeURIComponent(JSON.stringify(editor.l))
+    for (let tile of editor.l) {
+        if (tile[0] == 0){
+            editor.l.splice(editor.l.indexOf(tile))
+        }
+    }
+    let encodedLevel = JSON.stringify(editor.l)
     if (encodedLevel != editor.data){
-        encodedLevel = "?lvl=" + encodedLevel;
-        document.getElementById("leveltext").innerText = encodedLevel
+        document.getElementById("leveltext").innerText = encodedLevel;
+        document.getElementById("levelLink").innerHTML = `<a href="/?lv=${encodedLevel}&goto=2">Play</a>`
     }
     editor.data = encodedLevel;
     editor.saving=0;
@@ -1028,15 +1065,73 @@ lvlS.keyDown = (key) => {
     }
     if (key == "Space" || key == "Enter") {
         gameRoom.level = lvlS.o[lvlS.s].data;
+        if (lvlS.s === 0){
+            gameRoom.tutorial = 1;
+        }
         setRoom(2)
     }
+    if (key == "KeyE") {
+        editor.l = JSON.parse(lvlS.o[lvlS.s].data);
+        setRoom(3)
+    }
 }
+
+var options = new Room("Settings")
+options.s = 0
+options.ops = o;
+options.o = [{
+    "t": "Show FPS",
+    "a": _=>{ o.showFPS = !o.showFPS },
+    "v": "showFPS"
+}, {
+    "t": "Menu",
+    "a": _=>{ setRoom(0) }
+}]
+
+options.drawGUI = () => {
+    c.dT("Settings", c.w/2, 25, 2, 2, "#fff", "middle", "top");
+    for (let o in options.o) {
+        let s = options.o[o]
+        let txt = c.dT(`${options.o[o].t}`, 150, 50+(o*20), 2,2,"#fff","left","top");
+        if (options.s == o) {
+            let a = images.ui.a;
+            c.drawImg(a, 136, 50 + (o * 20), a.width * 2, a.height * 2)
+        }
+        let v = options.ops[s.v]
+        if (!(v==undefined)){
+            c.dT(`${v}`, 450, 50+(o*20), 2,2,"#fff", "right");
+
+        }
+    }
+}
+
+options.keyDown = (key) => {
+    if (key == "ArrowUp"||key=="ArrowRight"||key == "KeyW") {
+        options.s -= 1
+        if (options.s < 0) {
+            options.s = options.o.length-1
+        }
+    }
+    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyW") {
+        options.s += 1
+        if (options.s > options.o.length-1) {
+            options.s = 0
+        }
+    }
+    if (key == "Space" || key == "Enter") {
+        if (options.o[options.s].a){
+            options.o[options.s].a()
+        }
+    }
+}
+
 
 rooms.push(loader);
 rooms.push(menu);
 rooms.push(gameRoom);
 rooms.push(editor);
 rooms.push(lvlS);
+rooms.push(options)
 var roomI = !gPar("goto") ? 0 : gPar("goto");
 
 var cRoom = rooms[roomI];
@@ -1057,8 +1152,8 @@ var lastTime = 0;
 
 var mse = {x: 0, y: 0};
 var lastClick = {x: 0, y: 0};
-var startclicked = false;
-var endclicked = false
+var leftclicked = false;
+var rightclicked = false
 
 c.c.addEventListener('mousemove', (e) => {
     mse = c.getMousePos(e);
@@ -1066,16 +1161,24 @@ c.c.addEventListener('mousemove', (e) => {
 
 c.c.addEventListener("mousedown", (e) => {
     // console.log(e);
+    e.preventDefault()
     lastClick = c.getMousePos(e);
     mse = c.getMousePos(e);
-    startclicked = true;
+    switch (e.button) {
+        case 0: // left
+            leftclicked=1;
+            break;
+        case 1:
+            rightclicked=1;
+            break;
+    }
 });
 c.c.addEventListener("mouseup", (e)=>{
     // console.log(e);
     lastClick = c.getMousePos(e);
     mse = c.getMousePos(e);
-    endclicked = true;
 })
+c.c.oncontextmenu = _=>{return 0;}
 
 window.onwheel = (e)=>{
     if (e.deltaY > 0) {
@@ -1094,7 +1197,7 @@ cRoom.start();
         c.tH = c.c.offsetHeight;
         c.scale = c.tW / c.w;
         frame++;
-        c.fill("#151f1f");
+        c.fill(cRoom.background);
     
         for (let key in keysPressed) {
             if (keysPressed[key]) {
@@ -1106,9 +1209,9 @@ cRoom.start();
                 }
             }
         }
-        if (startclicked) {
+        if (leftclicked) {
             cRoom.click(lastClick.x, lastClick.y);
-            startclicked = false;
+            leftclicked = 0;
         }
     
         cRoom.step();
@@ -1116,14 +1219,19 @@ cRoom.start();
         cRoom.drawGUI(); 
     
         /* BEDUG INFO */
-        c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
-    
+        if (o.showFPS){
+            c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
+        }
+
+
+
         switch (cRoom.name) {
             case "menu":
             case "Editor":
                 c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
                 break;
             case "Game":
+                c.dT(`Humans:${gameRoom.humans}`, (c.w)+c.camera.x, 0+c.camera.y, 1,1,"#fff", "end")
                 c.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
                 break;
         }
