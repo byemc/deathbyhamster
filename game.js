@@ -4,11 +4,13 @@
 */
 
 // CONFIG
+
 const fontStack = '"Comic Sans MS"';
 let id = 0;
 const pi = Math.PI;
 let o = {showFPS:true}
-gPar = (key) => {
+let pause = 0
+var gPar = (key) => {
 
     // Address of the current window
     let address = window.location.search
@@ -78,6 +80,7 @@ class Canvas {
         this.ctx.save();
         this.ctx.translate((x+w/2)-this.camera.x, (y+h/2)-this.camera.y);
         this.ctx.rotate(direction * pi/180);
+        this.ctx.drawImage(img, cropX, cropY, cropW, cropH, -w/2, -h/2, w, h);
         this.ctx.drawImage(img, cropX, cropY, cropW, cropH, -w/2, -h/2, w, h);
         this.ctx.restore();
         // console.log(`${x}, ${y}, ${w}, ${h}, ${cropX}, ${cropY}, ${cropW}, ${cropH}`);
@@ -256,7 +259,7 @@ class Room {
         id += 1;
         this.name = name;
         this.objects = [];
-        this.background = "#151f1f";
+        this.background = "#252525";
         this.w = c.w;
         this.h = c.h;
     }
@@ -311,9 +314,16 @@ if(!c.ctx) {
 }
 gameCtx = c.ctx;
 c.fill("#151f1f");
-c.setFont(fontStack);
 gameCtx.imageSmoothingEnabled = false;
-var gameStart = false;
+
+let dPM = _=>{
+    // r = Room
+    c.ctx.globalAlpha = .7;
+    c.fill("#000");
+    c.ctx.globalAlpha = 1;
+    c.dT("paused", c.w/2+c.camera.x,(c.h/2-25)+c.camera.y, 1,1,"#fff", "middle","middle");
+
+}
 
 c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
 
@@ -393,14 +403,14 @@ for (var key in images) {
     }
 }
 
-var levels = [
+let levels = [
     {
         "name": "Tutorial",
-        "data": "[[1,1,2],[1,1,3],[5,1,4],[1,1,1],[2,0,3],[2,0,2],[2,0,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[5,4,0],[5,6,0],[5,5,0],[5,7,0],[6,8,0],[1,2,3],[1,3,3],[1,4,3],[1,6,3],[1,7,3],[1,7,2],[1,7,1],[1,6,1],[1,5,2],[1,6,2],[1,5,3],[1,5,1],[1,4,1],[1,4,2],[9,2,2],[1,3,2],[1,3,1],[1,2,1],[7,0,4],[5,2,4],[1,8,3],[1,8,4],[1,7,4],[1,9,4],[1,8,5],[1,9,5],[1,7,5],[1,9,3],[1,8,2],[1,6,4],[1,10,4],[1,10,5],[10,10,6],[1,9,6],[1,8,6],[6,6,5],[6,7,6],[6,5,4],[7,5,5],[7,6,6],[7,8,1],[6,9,1],[7,9,2],[6,10,2],[7,10,3],[5,3,4],[5,4,4],[2,7,7],[5,11,3],[5,12,3],[6,13,3],[2,13,4],[2,13,5],[2,13,6],[2,13,7],[2,13,8],[2,13,9],[2,7,8],[2,7,9],[7,7,10],[8,13,10],[5,12,10],[5,11,10],[5,10,10],[5,9,10],[5,8,10],[1,8,8],[1,8,9],[1,8,7],[1,9,7],[1,10,7],[1,11,7],[1,11,6],[1,11,4],[1,11,5],[1,12,4],[1,12,6],[1,12,5],[1,12,7],[1,12,8],[1,12,9],[1,11,9],[1,11,8],[1,10,8],[1,9,8],[1,9,9],[1,10,9]]"
+        "data": "NrCMBoIJgXXNLgMx2AVkQFlRXqrgAMy+R4s8BxoqmZhqGED8GVjyRHdL64AbF1bgMvDAHYhwQQA4p0EvAhJFCOiiUDVESRoSSK+yDi01NbE4MMQMem8c10za8qgCc5V5pXXOzhc6SxNjCBCEIcnbgcuE64LHgHglyaCYeqZqSGQgeUXK+ggmgwSbFIqXE-GkCJnJV8IKC2YKS9dIi8ahZ5fCtNb3RDu0egYle7WWGkmV6tp3CdOEEkuIcoMprBHqCoCp6BLvzwAcq2Sf9x5Aqq5RX0aSHbqSSMs+JXeDTvHKHxZuQYkguEBZT+whGgJ+vAgclemjkT3hn2qNwQZVRuB0pQgbUxRzx2VwYVKBFxkAIhPJyM0oAIcLRBERaIgTLx9NBxHZYy5HlZAPeMCAA"
     },
     {
         "name": "First Floor",
-        "data": "[[1,1,1],[4,0,0],[5,1,0],[5,2,0],[5,3,0],[6,4,0],[7,4,1],[5,5,1],[12,6,1],[5,7,1],[5,8,1],[5,9,1],[5,10,1],[5,11,1],[5,12,1],[5,13,1],[5,14,1],[5,15,1],[5,16,1],[6,17,1],[2,17,2],[2,17,3],[2,17,4],[2,17,5],[9,2,2],[2,0,1],[2,0,2],[2,0,3],[2,0,4],[2,0,5],[2,0,6],[7,0,7],[5,1,7],[5,2,7],[5,3,7],[5,4,7],[5,5,7],[11,6,7],[5,7,7],[5,8,7],[5,10,7],[5,9,7],[5,12,7],[5,11,7],[5,13,7],[5,15,7],[5,14,7],[5,16,7],[8,17,7],[2,17,6],[1,2,1],[1,3,1],[1,3,2],[1,1,2],[1,1,3],[1,2,3],[1,3,3],[13,6,2],[1,8,4],[1,10,6],[1,11,4],[1,13,2],[1,15,4],[10,13,5],[10,9,5],[10,11,5],[1,12,3],[1,10,3],[1,14,5],[1,12,5],[1,8,6],[1,7,6],[1,4,6],[1,1,4],[1,2,4],[1,4,4],[1,4,3],[1,4,2],[1,5,2],[1,5,3],[1,5,4],[1,10,5],[1,10,4],[1,9,4],[10,9,3],[1,7,3],[1,8,3],[1,7,2],[1,8,2],[1,9,2],[1,10,2],[1,11,2],[10,11,3],[1,12,2],[1,7,5],[1,8,5],[1,6,3],[1,6,4],[1,7,4],[1,6,5],[3,6,6],[1,5,6],[1,4,5],[1,5,5],[1,3,4],[1,3,5],[1,3,6],[1,2,6],[1,2,5],[1,1,5],[1,1,6],[1,9,6],[1,11,6],[1,12,6],[1,13,6],[1,14,6],[1,12,4],[1,13,4],[10,13,3],[1,14,3],[1,14,4],[1,14,2],[1,15,2],[1,15,3],[1,15,5],[1,15,6],[1,16,6],[1,16,5],[1,16,4],[1,16,3],[1,16,2]]"
+        "data": "NrCMBoNBddgFnABmbYBWSq6YEzY3AGYCA2cRJNAdgsjU0xjlH3OcNo8wA56dwATn6FQKbpCgNI+CaBJzEcptNDs07Lmlm1c2yLSL7QteMdro0w-Hrj5x+lLeD3ijiu8t3k4UjR-UquCBAvghhCThmIhR4JjhoBDksbSxfLFiwdLCGWGqEBmRqvGqMarJaHwmWd7VfizgsmgQCs3EjW0QzlBuDfhGDSQDYCTk3eB8Zg2Z9WCSHtMk46DRzeIkXmAowpuZiXGd-Z0ow1CIuzIHDXyzBb5tiLdYU3P4LxCI73SndON4bZgfqtpigLpkvsJ3ttenNDG0+D9dPCOg1rMcUXN9t1xC1Dhi7hc+BdyD9yF9TG1yJtRvcGpgnucAVc5iQvhs2qM2mwucyemDaXNhE99sLuYsBWcJZcvvIFltIENOogfqBPkr8ZB-tNAZ1GLqpWoDVTOmSTTCoGNoNAgA"
     },
 ]
 
@@ -759,39 +769,44 @@ player.shoot = () => {
 gameRoom.spawn(player);
 
 gameRoom.keyDown = (key) => {
-    console.log(key);
+    if (!pause){
+        if (key == "ArrowUp" || key == "KeyW") {
+            player.speed += player.accel;
+            if (player.speed > player.maxSpeed) {
+                player.speed = player.maxSpeed;
+            }
+        }
+        if (key == "ArrowDown" || key == "KeyS") {
+            player.speed -= player.accel*.8
+            if (player.speed < -player.maxSpeed) {
+                player.speed = -player.maxSpeed;
+            }
+        }
+        if (key == "ArrowLeft" || key == "KeyA") {
+            player.direction -= 2.5;
+            if (player.direction < 0) {
+                player.direction = 360;
+            }
+        }
+        if (key == "ArrowRight" || key == "KeyD") {
+            player.direction += 2.5;
+            if (player.direction > 360) {
+                player.direction = 0;
+            }
+        }
+        if (key == "Space") {
+            player.shoot();
+        }
 
-    if (key == "ArrowUp" || key == "KeyW") {
-        player.speed += player.accel;
-        if (player.speed > player.maxSpeed) {
-            player.speed = player.maxSpeed;
-        }
     }
-    if (key == "ArrowDown" || key == "KeyS") {
-        player.speed -= player.accel*.8
-        if (player.speed < -player.maxSpeed) {
-            player.speed = -player.maxSpeed;
-        }
-    }
-    if (key == "ArrowLeft" || key == "KeyA") {
-        player.direction -= 2.5;
-        if (player.direction < 0) {
-            player.direction = 360;
-        }
-    }
-    if (key == "ArrowRight" || key == "KeyD") {
-        player.direction += 2.5;
-        if (player.direction > 360) {
-            player.direction = 0;
-        }
-    }
-    if (key == "Space") {
-        player.shoot();
+    if (key == "KeyP"||key=="Escape") {
+        pause = !pause
     }
 }
 gameRoom.keyHeld = (key) => {
+    if (!pause){
     if (key == "ArrowUp" || key == "KeyW") {
-        player.speed += player.accel*1.9;
+        player.speed += player.accel*2.5;
         if (player.speed > player.maxSpeed) {
             player.speed = player.maxSpeed;
         }
@@ -814,9 +829,12 @@ gameRoom.keyHeld = (key) => {
             player.direction = 0;
         }
     }
+    }
 }
 gameRoom.click = (e) => {
+    if (!pause){
     player.shoot();
+    }
 }
 gameRoom.checkwall = (tx,ty) => {
     tx = Math.floor(tx);
@@ -833,10 +851,10 @@ gameRoom.start = () =>{
     if (customLv) {
         gameRoom.level = customLv
     }
-    gameRoom.level = JSON.parse(gameRoom.level);
+    gameRoom.level = JSON.parse(lzs.decompressFromEncodedURIComponent(gameRoom.level))
 
     if (gameRoom.tutorial) {
-        player.accel = .7
+        player.accel = .5
     }
 
 
@@ -881,14 +899,14 @@ gameRoom.start = () =>{
                         return
                     }
 
-                    pooman.timer = 90;
+                    pooman.timer = Math.floor(Math.random() * (120 - 60) ) + 60;
                 }
                 pooman.timer--;
             }
             pooman.draw = _=>{
                 c.sliceImage(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bb*pooman.w/2, 0, pooman.w/2, pooman.h/2, pooman.direction);
                 c.sliceImage(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bh*pooman.w/2, pooman.h/2, pooman.w/2, pooman.h/2, pooman.direction);
-                c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
+                // c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
             }
             pooman.timer = 90;
             gameRoom.spawn(pooman);
@@ -898,12 +916,14 @@ gameRoom.start = () =>{
 }
 
 gameRoom.step = _=> {
-    if (gameRoom.humans == 0){
-        setRoom(0)
-    }
-    // step all objects in the room
-    for (let obj of gameRoom.objects) {
-        obj.step();
+    if (!pause) {
+        if (gameRoom.humans <= 0){
+            pause = true;
+        }
+        // step all objects in the room
+        for (let obj of gameRoom.objects) {
+            obj.step();
+        }
     }
 }
 
@@ -929,6 +949,14 @@ gameRoom.draw = () => {
     }
     for (let i = 0; i < cRoom.objects.length; i++) {
         cRoom.objects[i].draw();
+    }
+}
+
+gameRoom.drawGUI = _=>{
+    c.dT(`Humans:${gameRoom.humans}`, (c.w-10)+c.camera.x, 10+c.camera.y, 2,2,"#fff", "end")
+
+    if (pause) {
+        dPM(gameRoom);
     }
 }
 
@@ -964,7 +992,8 @@ editor.generate = _=>{
             editor.l.splice(editor.l.indexOf(tile))
         }
     }
-    let encodedLevel = JSON.stringify(editor.l)
+    let encodedLevel = lzs.compressToEncodedURIComponent(JSON.stringify(editor.l))
+    console.log(encodedLevel);
     if (encodedLevel != editor.data){
         document.getElementById("leveltext").innerText = encodedLevel;
         document.getElementById("levelLink").innerHTML = `<a href="/?lv=${encodedLevel}&goto=2">Play</a>`
@@ -1231,7 +1260,6 @@ cRoom.start();
                 c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
                 break;
             case "Game":
-                c.dT(`Humans:${gameRoom.humans}`, (c.w)+c.camera.x, 0+c.camera.y, 1,1,"#fff", "end")
                 c.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
                 break;
         }
@@ -1244,5 +1272,5 @@ cRoom.start();
     c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
     c.dT(`${error}`, c.w/2, c.h / 2, 1, 1, "red", "middle");
     c.dT(`pls let Bye know by emailing him via`, c.w /2, c.h / 2 + 40, 1, 1, "white", "middle");
-    c.dT('bye[at]byecorps.com', c.w / 2, c.h / 2 + 60, 2, 2, "white", "middle");
+    c.dT('bye at byecorps.com', c.w / 2, c.h / 2 + 60, 2, 2, "white", "middle");
 }
