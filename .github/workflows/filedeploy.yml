@@ -41,4 +41,4 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
       - name: Deploy with rsync
-        run: rsync -arvz ../deathbyhamster/ dbh@${{ secrets.SSH_HOST }}:/var/www/dbh_game/ifyouaretypingthisyouareamoron/
+        run: rsync -arvz --delete ../deathbyhamster/ dbh@${{ secrets.SSH_HOST }}:/var/www/dbh_game/ifyouaretypingthisyouareamoron/
