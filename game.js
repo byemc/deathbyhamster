@@ -300,7 +300,7 @@ class Room {
     }
 
     start() {
-
+        c.camera = {x:0,y:0}
     }
 
 }
@@ -317,12 +317,19 @@ c.fill("#151f1f");
 gameCtx.imageSmoothingEnabled = false;
 
 let dPM = _=>{
-    // r = Room
     c.ctx.globalAlpha = .7;
     c.fill("#000");
+    c.ctx.globalAlpha = .85;
+    c.drawRect((c.w/2-150)+c.camera.x,120+c.camera.y, 300,120, "#000")
     c.ctx.globalAlpha = 1;
-    c.dT("paused", c.w/2+c.camera.x,(c.h/2-25)+c.camera.y, 1,1,"#fff", "middle","middle");
-
+    c.dT("paused", c.w/2+c.camera.x,c.h/2-30+c.camera.y, 3,3,"#fff", "middle","middle");
+    for (let o in gameRoom.pseo) {
+        let t = c.dT(gameRoom.pseo[o].t, c.w/2+c.camera.x, c.h/2+(o*9)+c.camera.y, 1,1,"#fff", "middle");
+        if (o == gameRoom.pses) {
+            let a = images.ui.a;
+            c.drawImg(a, ((c.w/2+c.camera.x)-t.w/2)-8, c.h/2+(o*9)+c.camera.y, 6,7)
+        }
+    }
 }
 
 c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
@@ -405,12 +412,12 @@ for (var key in images) {
 
 let levels = [
     {
-        "name": "Tutorial",
-        "data": "NrCMBoIJgXXNLgMx2AVkQFlRXqrgAMy+R4s8BxoqmZhqGED8GVjyRHdL64AbF1bgMvDAHYhwQQA4p0EvAhJFCOiiUDVESRoSSK+yDi01NbE4MMQMem8c10za8qgCc5V5pXXOzhc6SxNjCBCEIcnbgcuE64LHgHglyaCYeqZqSGQgeUXK+ggmgwSbFIqXE-GkCJnJV8IKC2YKS9dIi8ahZ5fCtNb3RDu0egYle7WWGkmV6tp3CdOEEkuIcoMprBHqCoCp6BLvzwAcq2Sf9x5Aqq5RX0aSHbqSSMs+JXeDTvHKHxZuQYkguEBZT+whGgJ+vAgclemjkT3hn2qNwQZVRuB0pQgbUxRzx2VwYVKBFxkAIhPJyM0oAIcLRBERaIgTLx9NBxHZYy5HlZAPeMCAA"
+        name: "Tutorial",
+        data: "NrCMBoIJgXXNLgMx2AVkQFlRXqrgAMy+R4s8BxoqmZhqGED8GVjyRHdL64AbF1bgMvDAHYhwQQA4p0EvAhJFCOiiUDVESRoSSK+yDi01NbE4MMQMem8c10za8qgCc5V5pXXOzhc6SxNjCBCEIcnbgcuE64LHgHglyaCYeqZqSGQgeUXK+ggmgwSbFIqXE-GkCJnJV8IKC2YKS9dIi8ahZ5fCtNb3RDu0egYle7WWGkmV6tp3CdOEEkuIcoMprBHqCoCp6BLvzwAcq2Sf9x5Aqq5RX0aSHbqSSMs+JXeDTvHKHxZuQYkguEBZT+whGgJ+vAgclemjkT3hn2qNwQZVRuB0pQgbUxRzx2VwYVKBFxkAIhPJyM0oAIcLRBERaIgTLx9NBxHZYy5HlZAPeMCAA"
     },
     {
-        "name": "First Floor",
-        "data": "NrCMBoNBddgFnABmbYBWSq6YEzY3AGYCA2cRJNAdgsjU0xjlH3OcNo8wA56dwATn6FQKbpCgNI+CaBJzEcptNDs07Lmlm1c2yLSL7QteMdro0w-Hrj5x+lLeD3ijiu8t3k4UjR-UquCBAvghhCThmIhR4JjhoBDksbSxfLFiwdLCGWGqEBmRqvGqMarJaHwmWd7VfizgsmgQCs3EjW0QzlBuDfhGDSQDYCTk3eB8Zg2Z9WCSHtMk46DRzeIkXmAowpuZiXGd-Z0ow1CIuzIHDXyzBb5tiLdYU3P4LxCI73SndON4bZgfqtpigLpkvsJ3ttenNDG0+D9dPCOg1rMcUXN9t1xC1Dhi7hc+BdyD9yF9TG1yJtRvcGpgnucAVc5iQvhs2qM2mwucyemDaXNhE99sLuYsBWcJZcvvIFltIENOogfqBPkr8ZB-tNAZ1GLqpWoDVTOmSTTCoGNoNAgA"
+        name: "First Floor",
+        data:"NrCsBoGZwBgXXMALLWCzgIxsRATDsAJzgF7qYEry7gQ0YBshEA7C+ABwckMSYwOmbAwKDMFKFknRyibAQnys05QvRVVwTXO2pdzSoQFZBuxYo1YyVo5EnCoD9WuxLgb8ZJLvsJXX5OaoL2ytyhHuDsEdgQMeDM8fiS7AFcpBQozGn8koYpWtjcvlLxBPHYEWJBeigR7ChI6BAQTbTMbRgNzemdECR9puCDjp2ORp2G0J2K0KC20IxWgjOo84jVSxtY0Kw9Rpz7RfuCh7QkZxjcl2xcPRA3Ko8EjyiP0I-Ml8Uf6OynyyiMmGkioDhBajooKhyjmkhQ60ii3hCRRe1hQOUBHRkQIW0i2HxbkxkRaeRhkXYiKKFMC1KG9McjIIzNRamxzhJni5QyJ4BIfJIOJpwvSfPY4p5zGFgmYfIg8q5KEcSzgQA"
     },
 ]
 
@@ -507,14 +514,11 @@ var levelRef = {
             "x": 416,
             "type": "wall"
         },
+        {
+            "x": 448,
+            "type": "vent"
+        },
     ]
-}
-
-var humanRef = {
-    "file": images.level.human,
-    "normie": {
-        "x": 0, "y": 0, "w": 32, "h": 32
-    }
 }
 
 
@@ -610,18 +614,24 @@ menu.keyDown = (key) => {
 }
 
 var gameRoom = new Room("Game");
+let lvlS = new Room("Level Select")
+lvlS.s = 0
+lvlS.o = levels
 gameRoom.humans = 0
 var player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 20;
 player.direction = 0;
-player.accel = 1.5;
 player.sprite = images.player.car;
 player.crop = hamsterRef.nl;
 player.x = 0;
 player.y = 0;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
+gameRoom.o = [{t:"Next Level",a:_=>{lvlS.s += 1; lvlS.keyDown("Space"); gameRoom.tutorial=0}}, {t:"Level Select",a:_=>{setRoom(4)}}, {t:"Menu", a:_=>{setRoom(1)}}]
+gameRoom.s = 0
+gameRoom.pseo = [{t:"Back to Menu", a:_=>{setRoom(1)}},{t:"Level Select",a:_=>{setRoom(4)}}]
+gameRoom.pses = 0
 player.oldDir = 0;
 
 player.step = _=> {
@@ -630,33 +640,43 @@ player.step = _=> {
     player.y += player.speed * Math.sin(player.direction * pi / 180);
     // check that the player won't go into a wall on the next step, and if so, stop.
     player.checkpoints = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 9; i++) {
         
         let carCx = player.x + player.w/2;
         let carCy = player.y + player.h/2;
         
         let pointOx = 0;
         let pointOy = 0;
-        if (i==0) {
-            pointOx = -32;
-        } else if (i==1) {
-            pointOx = 32;
-        } else if (i==2){
-            pointOx = -30;
-            pointOy = -15;
-        } else if (i==3){
-            pointOx = -30;
-            pointOy = 15;
-        } else if (i==4){
-            pointOx = 30;
-            pointOy = -15;
-        } else if (i==5){
-            pointOx = 30;
-            pointOy = 15;
+        switch (i) {
+            case 0:
+                pointOx = -32;
+                break;
+            case 1:
+                pointOx = 32;
+                break;
+            case 2:
+                pointOx = -30;
+                pointOy = -15;
+                break;
+            case 3:
+                pointOx = -30;
+                pointOy = 15;
+                break;
+            case 4:
+                pointOx = 30;
+                pointOy = -15;
+                break;
+            case 5:
+                pointOx = 30;
+                pointOy = 15;
+                break;
+            case 6:
+                pointOx = 20;
+                break;
+            case 7:
+                pointOx = -20;
         }
 
-
-        // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
         let pointX = carCx - pointOx * Math.cos(player.direction * pi / 180) - pointOy * Math.sin(player.direction * pi / 180);
         let pointY = carCy - pointOx * Math.sin(player.direction * pi / 180) + pointOy * Math.cos(player.direction * pi / 180);
 
@@ -670,18 +690,12 @@ player.step = _=> {
         let x = checkpoint.x / 64;
         let y = checkpoint.y / 64;
         if (gameRoom.checkwall(x, y)) {
-            checkpoint.stuck = true;
+            player.direction = player.oldDir;
+            player.x = player.xy[0];
+            player.y = player.xy[1];
+            player.speed -= 0.1;
         }
     }
-
-    if (player.checkpoints[0].stuck || player.checkpoints[1].stuck) {
-        // move down sideways if stuck
-        player.direction = player.oldDir;
-        player.x = player.xy[0];
-        player.y = player.xy[1];
-        player.speed -= 0.1;
-    }
-
 
     // keep the camera centered on the player
     c.setCamera(player.x - c.w/2, player.y - c.h/2);
@@ -712,8 +726,12 @@ player.draw = _=> {
     player.gx = gunx
     player.gy = guny
 
-    // get the angle between the gun and the mouse
-    player.aim = Math.atan2(c.mousePos.y - guny, c.mousePos.x - gunx) * 180 / pi;
+    if (!pause&&!gameRoom.finish) {
+
+        // get the angle between the gun and the mouse
+        player.aim = Math.atan2(c.mousePos.y - guny, c.mousePos.x - gunx) * 180 / pi;
+
+    }
 
     // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
     c.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
@@ -723,8 +741,6 @@ player.draw = _=> {
         c.drawRect(checkpoint.x, checkpoint.y, 1,1, "black");
 
     }
-
-    c.dT(`${Math.round(player.speed*100000)/100000}` ,player.x, player.y, 1,1, "white")
 
 }   
 
@@ -766,10 +782,9 @@ player.shoot = () => {
 }
 
 
-gameRoom.spawn(player);
 
 gameRoom.keyDown = (key) => {
-    if (!pause){
+    if (!pause&&!gameRoom.finish){
         if (key == "ArrowUp" || key == "KeyW") {
             player.speed += player.accel;
             if (player.speed > player.maxSpeed) {
@@ -798,41 +813,100 @@ gameRoom.keyDown = (key) => {
             player.shoot();
         }
 
+        if (key == "ShiftLeft") {
+            console.log("Triggered!")
+            for (let i = 6; i < 9; i++) {
+                let x = Math.floor(player.checkpoints[i].x / 64);
+                let y = Math.floor(player.checkpoints[i].y / 64);
+
+                for (let tile of gameRoom.level) {
+                    if (levelRef.tiles[tile[0]].type == "vent" && tile[1] == x && tile[2] == y) {
+                        for (let tile of gameRoom.level) if (levelRef.tiles[tile[0]].type == "vent" && !(tile[1] == x) && !(tile[2] == y)) {
+                            player.x = tile[1]*64;
+                            player.y = tile[2]*64+16;
+                            player.speed = 0;
+                        }
+                    }
+                }
+
+            }
+        }
+
     }
-    if (key == "KeyP"||key=="Escape") {
-        pause = !pause
+    if (!gameRoom.finish ) {
+        if (key == "KeyP" || key == "Escape") {
+            pause = !pause
+        }
+        if (pause) {
+            if (key == "ArrowUp"||key == "KeyW") {
+                gameRoom.pses -= 1
+                if (gameRoom.pses < 0) {
+                    gameRoom.pses = gameRoom.pseo.length-1
+                }
+            }
+            if (key == "ArrowDown"||key == "KeyS") {
+                gameRoom.pses += 1
+                if (gameRoom.pses > gameRoom.pseo.length-1) {
+                    gameRoom.pses = 0
+                }
+            }
+            if (key == "Space" || key == "Enter") {
+                pause = 0;
+                gameRoom.tutorial = 0;
+                gameRoom.pseo[gameRoom.pses].a()
+            }
+        }
+    }
+    if (gameRoom.finish) {
+        if (key == "ArrowUp"||key == "KeyW") {
+            gameRoom.s -= 1
+            if (gameRoom.s < 0) {
+                gameRoom.s = gameRoom.o.length-1
+            }
+        }
+        if (key == "ArrowDown"||key == "KeyS") {
+            gameRoom.s += 1
+            if (gameRoom.s > gameRoom.o.length-1) {
+                gameRoom.s = 0
+            }
+        }
+        if (key == "Space" || key == "Enter") {
+            gameRoom.finish = 0;
+            gameRoom.tutorial = 0;
+            gameRoom.o[gameRoom.s].a();
+        }
     }
 }
 gameRoom.keyHeld = (key) => {
-    if (!pause){
-    if (key == "ArrowUp" || key == "KeyW") {
-        player.speed += player.accel*2.5;
-        if (player.speed > player.maxSpeed) {
-            player.speed = player.maxSpeed;
+    if (!pause&&!gameRoom.finish){
+        if (key == "ArrowUp" || key == "KeyW") {
+            player.speed += player.accel;
+            if (player.speed > player.maxSpeed) {
+                player.speed = player.maxSpeed;
+            }
         }
-    }
-    if (key == "ArrowDown" || key == "KeyS") {
-        player.speed -= player.accel*1.53;
-        if (player.speed < -player.maxSpeed) {
-            player.speed = -player.maxSpeed;
+        if (key == "ArrowDown" || key == "KeyS") {
+            player.speed -= player.accel*1.1;
+            if (player.speed < -player.maxSpeed) {
+                player.speed = -player.maxSpeed;
+            }
         }
-    }
-    if (key == "ArrowLeft" || key == "KeyA") {
-        player.direction -= 2.5;
-        if (player.direction < 0) {
-            player.direction = 360;
+        if (key == "ArrowLeft" || key == "KeyA") {
+            player.direction -= 2.5;
+            if (player.direction < 0) {
+                player.direction = 360;
+            }
         }
-    }
-    if (key == "ArrowRight" || key == "KeyD") {
-        player.direction += 2.5;
-        if (player.direction > 360) {
-            player.direction = 0;
+        if (key == "ArrowRight" || key == "KeyD") {
+            player.direction += 2.5;
+            if (player.direction > 360) {
+                player.direction = 0;
+            }
         }
-    }
     }
 }
 gameRoom.click = (e) => {
-    if (!pause){
+    if (!pause&&!gameRoom.finish){
     player.shoot();
     }
 }
@@ -852,9 +926,20 @@ gameRoom.start = () =>{
         gameRoom.level = customLv
     }
     gameRoom.level = JSON.parse(lzs.decompressFromEncodedURIComponent(gameRoom.level))
+    gameRoom.finish = 0;
+
+    gameRoom.objects = [];
+
+
+    gameRoom.humans = 0;
+    gameRoom.spawn(player);
+
 
     if (gameRoom.tutorial) {
-        player.accel = .5
+        player.accel = .8
+    } else {
+        player.accel = 1.5
+
     }
 
 
@@ -916,9 +1001,10 @@ gameRoom.start = () =>{
 }
 
 gameRoom.step = _=> {
-    if (!pause) {
+    if (!pause&&!gameRoom.finish) {
         if (gameRoom.humans <= 0){
-            pause = true;
+            gameRoom.tutorial = 0;
+            gameRoom.finish = true;
         }
         // step all objects in the room
         for (let obj of gameRoom.objects) {
@@ -927,7 +1013,7 @@ gameRoom.step = _=> {
     }
 }
 
-gameRoom.draw = () => {
+gameRoom.draw = _=> {
 
     for (let tile of gameRoom.level) {
         // [index, x, y]
@@ -957,6 +1043,23 @@ gameRoom.drawGUI = _=>{
 
     if (pause) {
         dPM(gameRoom);
+    }
+    if (gameRoom.finish) {
+        c.ctx.globalAlpha = .7;
+        c.fill("#000");
+        c.ctx.globalAlpha = .85;
+        c.drawRect((c.w/2-150)+c.camera.x,120+c.camera.y, 300,150, "#000")
+        c.ctx.globalAlpha = 1;
+
+
+        c.dT("You Won!", c.w/2+c.camera.x,c.h/2-30+c.camera.y, 3,3,"#fff", "middle","middle");
+        for (let o in gameRoom.o) {
+            let t = c.dT(gameRoom.o[o].t, c.w/2+c.camera.x, c.h/2+(o*9)+c.camera.y, 1,1,"#fff", "middle");
+            if (o == gameRoom.s) {
+                let a = images.ui.a;
+                c.drawImg(a, ((c.w/2+c.camera.x)-t.w/2)-8, c.h/2+(o*9)+c.camera.y, 6,7)
+            }
+        }
     }
 }
 
@@ -1063,9 +1166,7 @@ editor.drawGUI = _=>{
     c.sliceImage(editor.t.file, c.mousePos.x+16,c.mousePos.y+16,32,32,32*editor.i,0,32,32);
 }
 
-let lvlS = new Room("Level Select")
-lvlS.s = 0
-lvlS.o = levels
+
 
 lvlS.drawGUI = () => {
     c.dT("Death by Hamster", c.w/2, 25, 2, 2, "white", "middle", "top");
@@ -1086,7 +1187,7 @@ lvlS.keyDown = (key) => {
             lvlS.s = lvlS.o.length-1
         }
     }
-    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyW"|| key == "KeyA") {
+    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyS"|| key == "KeyA") {
         lvlS.s += 1
         if (lvlS.s > lvlS.o.length-1) {
             lvlS.s = 0
@@ -1100,7 +1201,7 @@ lvlS.keyDown = (key) => {
         setRoom(2)
     }
     if (key == "KeyE") {
-        editor.l = JSON.parse(lvlS.o[lvlS.s].data);
+        editor.l = JSON.parse(lzs.decompressFromEncodedURIComponent(lvlS.o[lvlS.s].data));
         setRoom(3)
     }
 }
@@ -1110,7 +1211,7 @@ options.s = 0
 options.ops = o;
 options.o = [{
     "t": "Show FPS",
-    "a": _=>{ o.showFPS = !o.showFPS },
+    "a": _=>{ o.showFPS = !o.showFPS; localStorage.setItem('dbh_showFPS', o.showFPS); },
     "v": "showFPS"
 }, {
     "t": "Menu",
@@ -1141,7 +1242,7 @@ options.keyDown = (key) => {
             options.s = options.o.length-1
         }
     }
-    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyW") {
+    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyS") {
         options.s += 1
         if (options.s > options.o.length-1) {
             options.s = 0
