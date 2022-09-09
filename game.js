@@ -1,16 +1,14 @@
-/* 
+/*
     For js13k 2022
     Theme: death
 */
 
 // CONFIG
-
-const fontStack = '"Comic Sans MS"';
 let id = 0;
 const pi = Math.PI;
-let o = {showFPS:true}
-let pause = 0
-var gPar = (key) => {
+let pause = 0;
+let lPrefix = "bye_dbh_" // this is for JS13K's shared localStorage
+const gPar = (key) => {
 
     // Address of the current window
     let address = window.location.search
@@ -21,6 +19,33 @@ var gPar = (key) => {
     // Returning the respected value associated
     // with the provided key
     return parameterList.get(key)
+};
+
+let getStore = (o) => {
+    return localStorage.getItem(o);
+}
+let setStore = (o, v, ops={}) => {
+    if (ops.c) { // compression
+        v = lzs.compress(v);
+    }
+    localStorage.setItem(`${lPrefix}${o}`, `${v}`);
+}
+let o = {
+}
+
+for (let i of Object.keys(localStorage)) {
+    console.log(i)
+    if (i.startsWith(`${lPrefix}o_`)) {
+        switch(getStore(i)) {
+            case "true":
+                o[i.slice(10)] = 1
+                break;
+            case "false":
+                o[i.slice(10)] = 0
+                break;
+        }
+        break;
+    }
 }
 
 const customLv = gPar("lv");
@@ -53,7 +78,7 @@ class Canvas {
 
         this.mousePos.x = ((evt.clientX - rect.left) * scaleX) + this.camera.x;
         this.mousePos.y = ((evt.clientY - rect.top) * scaleY) + this.camera.y;
-    
+
         return {
         x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
         y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
@@ -85,7 +110,7 @@ class Canvas {
         this.ctx.restore();
         // console.log(`${x}, ${y}, ${w}, ${h}, ${cropX}, ${cropY}, ${cropW}, ${cropH}`);
     }
-    
+
     drawImage(img, x, y, w, h, direction=0) {
         // alias for drawImg
         this.drawImg(img, x, y, w, h, direction);
@@ -110,14 +135,14 @@ class Canvas {
         string = string.toUpperCase();
         let chars = string.split("");
         // console.log(chars);
-        
+
         let charWidth = 7
         let charOff = 0;
         // check if there's an odd number of chars
         if (chars.length % 2 == 1) {
              charOff = 1
         }
-        let strLength = (chars.length * charWidth - charOff) * scalex; 
+        let strLength = (chars.length * charWidth - charOff) * scalex;
 
         let charHeight = 7
         let strHeight = (charHeight * scaley);
@@ -126,10 +151,6 @@ class Canvas {
         }
 
         switch(align) {
-            case "start":
-            case "left":
-                x = x;
-                break;
             case "center":
             case "middle":
                 x = x - strLength/2;
@@ -140,9 +161,6 @@ class Canvas {
                 break;
         }
         switch(vAliign) {
-            case "top":
-                y = y;
-                break;
             case "middle":
             case "center":
                 y = y - strHeight/2;
@@ -152,13 +170,13 @@ class Canvas {
                 break;
         }
 
-        
+
         let charI = 0;
         let nextOffset = (7 * scalex);
         let lastWasFull = false;
-        
+
         for (let char of chars) {
-            
+
             this.ctx.fillStyle = color;
             let row = 0;
             let col = 0;
@@ -169,7 +187,7 @@ class Canvas {
                 offset -= (0.5 * scalex);
                 lastWasFull = false;
             }
-            
+
             if(ops.shortFullStop) {
                 if(char == ".") {
                     lastWasFull = true;
@@ -306,8 +324,8 @@ class Room {
 }
 
 // INIT CANVAS
-var fI = fntINDEX; // in letters.js
-var c = new Canvas('gameCanvas');
+let fI = fntINDEX; // in letters.js
+let c = new Canvas('gameCanvas');
 // check if the canvas is supported
 if(!c.ctx) {
     alert("Your browser does not support the canvas element");
@@ -335,7 +353,7 @@ let dPM = _=>{
 c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
 
 // Load images
-var images = {
+let images = {
     "mouse": {
         "ingame": "./aimerthing.png",
         "cursor": "./cursor.png"
@@ -353,19 +371,19 @@ var images = {
     }
 };
 
-var loader = new Room("loader");
-var loadingText = "Loading...";
-var loadingError = 0;
+let loader = new Room("loader");
+let loadingText = "Loading...";
+let loadingError = 0;
 loader.drawGUI = () => {
     c.dT(loadingText, c.w / 2, c.h / 2, 2, 2, "white", "middle");
     if (loadingError) {
         c.dT(loadingErrorText, c.w / 2, c.h / 2 + 20, 1, 1, "red", "middle");
     }
 }
-var rooms = [];
+let rooms = [];
 
-var loadedImages = 0;
-var totalImages = 0;
+let loadedImages = 0;
+let totalImages = 0;
 
 // count the total number of images to load
 for (let key in images) {
@@ -380,11 +398,11 @@ loadingText = `Loading images (${loadedImages} / ${totalImages})`
 
 
 // after all images are loaded, and no errors occured, start the game
-for (var key in images) {
-    for (var subkey in images[key]) {
-        
+for (let key in images) {
+    for (let subkey in images[key]) {
+
         // attempt to load the image
-        var IMG = new Image();
+        let IMG = new Image();
         IMG.addEventListener('load', () => {
             loadedImages++;
             loadingText = `Loading images (${loadedImages} / ${totalImages})`
@@ -403,22 +421,17 @@ for (var key in images) {
 
         // add the image to the images object
         images[key][subkey] = IMG;
-        
+
         // draw the loading text by drawing a rectangle over the previous text, and drawing the new text
         loadingText = `Loading images (${loadedImages} / ${totalImages})`
-        
+
     }
 }
 
 let levels = [
-    {
-        name: "Tutorial",
-        data: "NrCMBoIJgXXNLgMx2AVkQFlRXqrgAMy+R4s8BxoqmZhqGED8GVjyRHdL64AbF1bgMvDAHYhwQQA4p0EvAhJFCOiiUDVESRoSSK+yDi01NbE4MMQMem8c10za8qgCc5V5pXXOzhc6SxNjCBCEIcnbgcuE64LHgHglyaCYeqZqSGQgeUXK+ggmgwSbFIqXE-GkCJnJV8IKC2YKS9dIi8ahZ5fCtNb3RDu0egYle7WWGkmV6tp3CdOEEkuIcoMprBHqCoCp6BLvzwAcq2Sf9x5Aqq5RX0aSHbqSSMs+JXeDTvHKHxZuQYkguEBZT+whGgJ+vAgclemjkT3hn2qNwQZVRuB0pQgbUxRzx2VwYVKBFxkAIhPJyM0oAIcLRBERaIgTLx9NBxHZYy5HlZAPeMCAA"
-    },
-    {
-        name: "First Floor",
-        data:"NrCsBoGZwBgXXMALLWCzgIxsRATDsAJzgF7qYEry7gQ0YBshEA7C+ABwckMSYwOmbAwKDMFKFknRyibAQnys05QvRVVwTXO2pdzSoQFZBuxYo1YyVo5EnCoD9WuxLgb8ZJLvsJXX5OaoL2ytyhHuDsEdgQMeDM8fiS7AFcpBQozGn8koYpWtjcvlLxBPHYEWJBeigR7ChI6BAQTbTMbRgNzemdECR9puCDjp2ORp2G0J2K0KC20IxWgjOo84jVSxtY0Kw9Rpz7RfuCh7QkZxjcl2xcPRA3Ko8EjyiP0I-Ml8Uf6OynyyiMmGkioDhBajooKhyjmkhQ60ii3hCRRe1hQOUBHRkQIW0i2HxbkxkRaeRhkXYiKKFMC1KG9McjIIzNRamxzhJni5QyJ4BIfJIOJpwvSfPY4p5zGFgmYfIg8q5KEcSzgQA"
-    },
+        /*tutorial*/ "NrCMBoIJgXXNLgMx2AVkQFlRXqrgAMy+R4s8BxoqmZhqGED8GVjyRHdL64AbF1bgMvDAHYhwQQA4p0EvAhJFCOiiUDVESRoSSK+yDi01NbE4MMQMem8c10za8qgCc5V5pXXOzhc6SxNjCBCEIcnbgcuE64LHgHglyaCYeqZqSGQgeUXK+ggmgwSbFIqXE-GkCJnJV8IKC2YKS9dIi8ahZ5fCtNb3RDu0egYle7WWGkmV6tp3CdOEEkuIcoMprBHqCoCp6BLvzwAcq2Sf9x5Aqq5RX0aSHbqSSMs+JXeDTvHKHxZuQYkguEBZT+whGgJ+vAgclemjkT3hn2qNwQZVRuB0pQgbUxRzx2VwYVKBFxkAIhPJyM0oAIcLRBERaIgTLx9NBxHZYy5HlZAPeMCAA",
+        /* lv 2 */ "NrCsBoGZwBgXXMALLWCzgIxsRATDsAJzgF7qYEry7gQ0YBshEA7C+ABwckMSYwOmbAwKDMFKFknRyibAQnys05QvRVVwTXO2pdzSoQFZBuxYo1YyVo5EnCoD9WuxLgb8ZJLvsJXX5OaoL2ytyhHuDsEdgQMeDM8fiS7AFcpBQozGn8koYpWtjcvlLxBPHYEWJBeigR7ChI6BAQTbTMbRgNzemdECR9puCDjp2ORp2G0J2K0KC20IxWgjOo84jVSxtY0Kw9Rpz7RfuCh7QkZxjcl2xcPRA3Ko8EjyiP0I-Ml8Uf6OynyyiMmGkioDhBajooKhyjmkhQ60ii3hCRRe1hQOUBHRkQIW0i2HxbkxkRaeRhkXYiKKFMC1KG9McjIIzNRamxzhJni5QyJ4BIfJIOJpwvSfPY4p5zGFgmYfIg8q5KEcSzgQA",
+        /* lv 3 */ "NrCMBoCZwFgXXGcBmcBWBTX0dCPg91MiA2E8CAdkwlRsTRXAA5Mno3ErLXapiiCNHJCBDMDGaiwwlBWiQFlTFOgAGds02NY4HcCZMDTUvq0tzunifABOK4crrHTUBFugNW0Kk9SDM1BjTB4pAiNYLTMI8DD+HgxEenAZdzi+XSkuJyYc00zCDIl8OP4pNJdTcsEkI34zJKQzNNSysSYS5lB+VCVdVGRMGPkxNRqejpUhKqh+JiGxM0XmuaXppB5JzbWdlYhLfdZdg42IB23zk-tRpFAXI-vrp8vKCFf0x6r+L3a7itoLlAUiaeSiugcsSeUPwPmgBCC2AovlqKJRMjcqHyb0Kbk4Phc2Ic2MsOVOTVOXUsrQcFJuNL+7xcJSBLla6XZ1B+Im5qJxdJRXWBfzc2UwlmChTwnWR1VwlHq8slBGlu1VK1V2wuwl5H0UvMegx+fWNZ0oUg+Uke4zEwoI70s-SKoB4TrwWx+Ep+F2RPEeh29tyCkORtNClAcGKgbK0kAgUcgPLEib5KftUGgRxTTo4eH4kCB4bjZuLFItDidwhclejtyr4KQBdR1dhybo+Z1iEdqBkZkgqG2ihN8v7tyHDfHoMolgIW3iiAtNmGUA8PksngctibBgt8jgQA"
 ]
 
 hamsterRef = {
@@ -449,7 +462,7 @@ hamsterRef = {
     }
 }
 
-var levelRef = {
+let levelRef = {
     "file": images.level.tileset,
     "default": {
         "x": 0,
@@ -532,11 +545,11 @@ for (let tile of levelRef.tiles) {
 }
 
 console.debug(images)
-var targFPS = 60;
-var frame = 0;
+let targFPS = 60;
+let frame = 0;
 
 
-var menu = new Room("menu");
+let menu = new Room("menu");
 
 menu.s = 0
 menu.o = [
@@ -613,12 +626,13 @@ menu.keyDown = (key) => {
     }
 }
 
-var gameRoom = new Room("Game");
+let gameRoom = new Room("Game");
 let lvlS = new Room("Level Select")
 lvlS.s = 0
 lvlS.o = levels
 gameRoom.humans = 0
-var player   = new Entity("Player", 0,0);
+gameRoom.li = 0
+let player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 20;
 player.direction = 0;
@@ -629,6 +643,7 @@ player.y = 0;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
 gameRoom.o = [{t:"Next Level",a:_=>{lvlS.s += 1; lvlS.keyDown("Space"); gameRoom.tutorial=0}}, {t:"Level Select",a:_=>{setRoom(4)}}, {t:"Menu", a:_=>{setRoom(1)}}]
+
 gameRoom.s = 0
 gameRoom.pseo = [{t:"Back to Menu", a:_=>{setRoom(1)}},{t:"Level Select",a:_=>{setRoom(4)}}]
 gameRoom.pses = 0
@@ -641,10 +656,10 @@ player.step = _=> {
     // check that the player won't go into a wall on the next step, and if so, stop.
     player.checkpoints = [];
     for (let i = 0; i < 9; i++) {
-        
+
         let carCx = player.x + player.w/2;
         let carCy = player.y + player.h/2;
-        
+
         let pointOx = 0;
         let pointOy = 0;
         switch (i) {
@@ -719,7 +734,7 @@ player.draw = _=> {
 
     let carCx = player.x + player.w/2;
     let carCy = player.y + player.h/2;
-    
+
     // get gunx and guny by moving backwards (gunOx and gunOy) from the center of the car in this.direction
     let gunx = carCx - gunOx * Math.cos(player.direction * pi / 180) - gunOy * Math.sin(player.direction * pi / 180);
     let guny = carCy - gunOx * Math.sin(player.direction * pi / 180) + gunOy * Math.cos(player.direction * pi / 180);
@@ -742,7 +757,7 @@ player.draw = _=> {
 
     }
 
-}   
+}
 
 player.shoot = () => {
     // shoot a bullet
@@ -751,7 +766,7 @@ player.shoot = () => {
     bullet.direction = player.aim;
     bullet.w = 2;
     bullet.h = 2;
-    
+
     bullet.step = () => {
         // for each step, check if it's path intersects with any other entity
         for (let i = 0; i < cRoom.objects.length; i++) {
@@ -822,6 +837,8 @@ gameRoom.keyDown = (key) => {
                 for (let tile of gameRoom.level) {
                     if (levelRef.tiles[tile[0]].type == "vent" && tile[1] == x && tile[2] == y) {
                         for (let tile of gameRoom.level) if (levelRef.tiles[tile[0]].type == "vent" && !(tile[1] == x) && !(tile[2] == y)) {
+                            console.log (x,y)
+                            console.log(tile[1], tile[2])
                             player.x = tile[1]*64;
                             player.y = tile[2]*64+16;
                             player.speed = 0;
@@ -922,10 +939,15 @@ gameRoom.checkwall = (tx,ty) => {
 }
 
 gameRoom.start = () =>{
+
     if (customLv) {
         gameRoom.level = customLv
     }
-    gameRoom.level = JSON.parse(lzs.decompressFromEncodedURIComponent(gameRoom.level))
+
+    if (gameRoom.li) {
+        gameRoom.level = JSON.parse(lzs.decompressFromEncodedURIComponent(levels[gameRoom.li - 1]))
+    }
+
     gameRoom.finish = 0;
 
     gameRoom.objects = [];
@@ -1001,6 +1023,9 @@ gameRoom.start = () =>{
 }
 
 gameRoom.step = _=> {
+    if (lvlS.s+1 >= lvlS.o.length) {
+        gameRoom.o[0] = {t:"you killed them all!", a:_=>{alert("well done!!!")}}
+    }
     if (!pause&&!gameRoom.finish) {
         if (gameRoom.humans <= 0){
             gameRoom.tutorial = 0;
@@ -1194,7 +1219,7 @@ lvlS.keyDown = (key) => {
         }
     }
     if (key == "Space" || key == "Enter") {
-        gameRoom.level = lvlS.o[lvlS.s].data;
+        gameRoom.li = lvlS.s+1;
         if (lvlS.s === 0){
             gameRoom.tutorial = 1;
         }
@@ -1206,12 +1231,12 @@ lvlS.keyDown = (key) => {
     }
 }
 
-var options = new Room("Settings")
+let options = new Room("Settings")
 options.s = 0
 options.ops = o;
 options.o = [{
     "t": "Show FPS",
-    "a": _=>{ o.showFPS = !o.showFPS; localStorage.setItem('dbh_showFPS', o.showFPS); },
+    "a": _=>{ o.showFPS = !o.showFPS; setStore("o_showFPS", o.showFPS) },
     "v": "showFPS"
 }, {
     "t": "Menu",
@@ -1262,13 +1287,13 @@ rooms.push(gameRoom);
 rooms.push(editor);
 rooms.push(lvlS);
 rooms.push(options)
-var roomI = !gPar("goto") ? 0 : gPar("goto");
+let roomI = !gPar("goto") ? 0 : gPar("goto");
 
-var cRoom = rooms[roomI];
+let cRoom = rooms[roomI];
 
 
-var keysPressed = {};
-var keysLastPressed = {};
+let keysPressed = {};
+let keysLastPressed = {};
 
 document.addEventListener('keydown', (e) => {
     keysPressed[e.code] = true;
@@ -1278,12 +1303,12 @@ document.addEventListener('keyup', (e) => {
     keysLastPressed[e.code] = false;
 } );
 
-var lastTime = 0;
+let lastTime = 0;
 
-var mse = {x: 0, y: 0};
-var lastClick = {x: 0, y: 0};
-var leftclicked = false;
-var rightclicked = false
+let mse = {x: 0, y: 0};
+let lastClick = {x: 0, y: 0};
+let leftclicked = false;
+let rightclicked = false
 
 c.c.addEventListener('mousemove', (e) => {
     mse = c.getMousePos(e);
@@ -1320,15 +1345,15 @@ window.onwheel = (e)=>{
 }
 
 try {
-cRoom.start();
+    cRoom.start();
 
-    var gameLoop = setInterval(() => {
+    setInterval(() => {
         c.tW = c.c.offsetWidth;
         c.tH = c.c.offsetHeight;
         c.scale = c.tW / c.w;
         frame++;
         c.fill(cRoom.background);
-    
+
         for (let key in keysPressed) {
             if (keysPressed[key]) {
                 if (!keysLastPressed[key]) {
@@ -1343,17 +1368,14 @@ cRoom.start();
             cRoom.click(lastClick.x, lastClick.y);
             leftclicked = 0;
         }
-    
+
         cRoom.step();
         cRoom.draw();
-        cRoom.drawGUI(); 
-    
-        /* BEDUG INFO */
+        cRoom.drawGUI();
+
         if (o.showFPS){
             c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
         }
-
-
 
         switch (cRoom.name) {
             case "menu":
@@ -1365,9 +1387,9 @@ cRoom.start();
                 break;
         }
         lastTime = Date.now();
-    
+
     } , 1000/targFPS); // 60 fps
-    
+
 } catch (error) {
     c.fill("#1c1c1c");
     c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
