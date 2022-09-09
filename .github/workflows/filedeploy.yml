@@ -27,12 +27,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Minify
-        uses: devatherock/minify-js@v1.0.3
         with:
           directory: .
           output: build
           add_suffix: false
+      - name: Install minification dependencies
+        run: npm i --global terser && pip3 install -r requriements.txt
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -41,4 +41,4 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
       - name: Deploy with rsync
-        run: rsync -arvz --delete ../deathbyhamster/ dbh@${{ secrets.SSH_HOST }}:/var/www/dbh_game/ifyouaretypingthisyouareamoron/
+        run: rsync -arvz --delete build/ dbh@${{ secrets.SSH_HOST }}:/var/www/dbh_game/ifyouaretypingthisyouareamoron/
