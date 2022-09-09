@@ -1,7 +1,7 @@
 // Inspired by https://github.com/PaulBGD/PixelFont
 
 
-const fntA = [
+const A = [
     [, , 1, 1, 1, 1], 
     [, 1, 1, , , 1, 1],
     [, 1, 1, , , 1, 1],
@@ -11,7 +11,7 @@ const fntA = [
     [, 1, 1, , , 1, 1], 
 ];
 
-const fntB = [
+const B = [
     [, 1, 1, 1, 1, 1],
     [, 1, 1, , , 1, 1],
     [, 1, 1, , , 1, 1],
@@ -22,7 +22,7 @@ const fntB = [
     
 ];
 
-const fntC = [
+const C = [
     [, , 1, 1, 1, 1], 
     [, 1, 1, , , 1, 1],
     [, 1, 1],
@@ -33,7 +33,7 @@ const fntC = [
     
 ];
 
-const fntD = [
+const D = [
     [, 1, 1, 1, 1, 1],
     [, 1, 1, , , 1, 1],
     [, 1, 1, , , 1, 1],
@@ -44,7 +44,7 @@ const fntD = [
     
 ];
 
-const fntE = [
+const E = [
     
     [, , 1, 1, 1, 1, 1], 
     [, 1, 1, 1, 1, 1, 1],
@@ -56,7 +56,7 @@ const fntE = [
     
 ];
 
-const fntF = [
+const F = [
     
     [, , 1, 1, 1, 1, 1], 
     [, 1, 1, 1, 1, 1, 1],
@@ -68,7 +68,7 @@ const fntF = [
     
 ];
 
-const fntG = [
+const G = [
     [, , 1, 1, 1, 1, 1], 
     [, 1, 1, 1, 1, 1, 1], , 
     [, 1, 1],
@@ -79,7 +79,7 @@ const fntG = [
     
 ];
 
-const fntH = [
+const H = [
     [, 1, 1, , , 1, 1],
     [, 1, 1, , , 1, 1],
     [, 1, 1, , , 1, 1],
@@ -90,7 +90,7 @@ const fntH = [
     
 ];
 
-const fntI = [
+const I = [
     [, 1, 1, 1, 1, 1, 1],
     [, 1, 1, 1, 1, 1, 1],
     [, , , 1, 1],
@@ -100,7 +100,7 @@ const fntI = [
     [, 1, 1, 1, 1, 1, 1],
 ];
 
-const fntJ = [
+const J = [
     
     [, , 1, 1, 1, 1, 1],  
     [, , , , , 1, 1],
@@ -112,7 +112,7 @@ const fntJ = [
     
  ];
 
- const fntK = [
+ const K = [
 
     [, 1, 1, , , 1,1],
     [, 1, 1, , , 1,1],
@@ -124,7 +124,7 @@ const fntJ = [
     
  ];
 
- const fntL = [
+ const L = [
 
     [, 1, 1],
     [, 1, 1],
@@ -136,7 +136,7 @@ const fntJ = [
     
  ];
 
- const fntM = [
+ const M = [
 
     [, 1, 1, , , , 1], 
     [, 1, 1, 1, , 1, 1],
@@ -148,7 +148,7 @@ const fntJ = [
 
  ];
 
- const fntN = [
+ const N = [
 
     [, 1, 1, , , 1, 1], 
     [, 1, 1, , , 1, 1], 
@@ -160,7 +160,7 @@ const fntJ = [
     
  ];
 
- const fntO = [
+ const O = [
 
     [, , 1, 1, 1, 1],
     [, 1, 1, , , 1, 1],
@@ -172,7 +172,7 @@ const fntJ = [
     
  ];
 
- const fntP = [
+ const P = [
     [, 1, 1, 1, 1, 1],
     [, 1, 1, , , 1, 1],
     [, 1, 1, , , 1, 1],
@@ -183,7 +183,7 @@ const fntJ = [
     
  ];
 
- const fntQ = [
+ const Q = [
 
     [, , 1, 1, 1, 1],
     [, 1, 1, , , 1, 1],
@@ -195,7 +195,7 @@ const fntJ = [
     
  ];
 
- const fntR = [
+ const R = [
 
     [, 1, 1, 1, 1, 1],
     [, 1, 1, , , 1, 1],
@@ -207,7 +207,7 @@ const fntJ = [
     
  ];
 
- const fntS = [
+ const S = [
 
     [, , 1, 1, 1, 1], 
     [, 1, 1, , , 1, 1], 
@@ -219,7 +219,7 @@ const fntJ = [
     
  ];
 
- const fntT = [
+ const T = [
 
     [, 1, 1, 1, 1, 1, 1], 
     [, 1, 1, 1, 1, 1, 1],
@@ -231,7 +231,7 @@ const fntJ = [
     
  ];
 
- const fntU = [
+ const U = [
 
     [, 1, 1, , , 1, 1], 
     [, 1, 1, , , 1, 1], 
@@ -243,7 +243,7 @@ const fntJ = [
     
  ];
 
- const fntV = [
+ const V = [
 
     [, 1, 1, , , , 1], 
     [, 1, 1, , , , 1], 
@@ -255,7 +255,7 @@ const fntJ = [
     
  ];
 
- const fntW = [
+ const W = [
 
     [, 1, 1, , , , 1],  
     [, 1, 1, , , , 1],  
@@ -267,7 +267,7 @@ const fntJ = [
     
  ];
 
- const fntX = [
+ const X = [
 
     [, 1, , , , , 1], 
     [, 1, 1, , , 1, 1],  
@@ -279,7 +279,7 @@ const fntJ = [
     
  ];
 
- const fntY = [
+ const Y = [
 
     [, 1, 1, , , 1, 1],  
     [, 1, 1, , , 1, 1],  
@@ -291,7 +291,7 @@ const fntJ = [
     
  ];
 
- const fntZ = [
+ const Z = [
 
     [,1, 1, 1, 1, 1, 1],
     [, , , , , 1, 1],
@@ -303,7 +303,7 @@ const fntJ = [
     
  ];
 
- const fnt1 = [
+ const one = [
    [, , , 1, 1],
    [, , 1, 1, 1],
    [, , , 1, 1],
@@ -314,7 +314,7 @@ const fntJ = [
 ];
 
 
-const fnt2 = [
+const two = [
    [, , 1, 1, 1, 1],
    [, 1, 1, , , 1, 1],
    [, , , , , 1, 1],
@@ -324,7 +324,7 @@ const fnt2 = [
    [, 1, 1, 1, 1, 1, 1],
 ];
 
-const fnt3 = [
+const thr = [
    [, , 1, 1, 1, 1],
    [, 1, 1, , , 1, 1],
    [, , , , , 1, 1],
@@ -335,7 +335,7 @@ const fnt3 = [
 ];
 
 
-const fnt4 = [
+const fou = [
    [, , , , 1, 1, 1],
    [, , , 1, 1, 1, 1],
    [, , 1, 1, , 1, 1],
@@ -345,7 +345,7 @@ const fnt4 = [
    [, , , , , 1, 1],
 ];
 
-const fnt5 = [
+const fiv = [
    [, 1, 1, 1, 1, 1, 1],
    [, 1, 1],
    [, 1, 1],
@@ -355,7 +355,7 @@ const fnt5 = [
    [, 1, 1, 1, 1, 1,],
 ];
 
-const fnt6 = [
+const six = [
       [, , 1, 1, 1, 1],
       [, 1, 1, , , 1, 1],
       [, 1, 1],
@@ -365,7 +365,7 @@ const fnt6 = [
       [, , 1, 1, 1, 1],
 ];
 
-const fnt7 = [
+const sev = [
    [, 1, 1, 1, 1, 1, 1],
    [, 1, 1, 1, 1, 1, 1],
    [, , , , 1, 1],
@@ -375,7 +375,7 @@ const fnt7 = [
    [, , , 1, 1],
 ];
 
-const fnt8 = [
+const eig = [
    [, , 1, 1, 1, 1],
    [, 1, 1, , , 1, 1],
    [, 1, 1, , , 1, 1],
@@ -385,7 +385,7 @@ const fnt8 = [
    [, , 1, 1, 1, 1],
 ];
 
-const fnt9 = [
+const nin = [
    [, , 1, 1, 1, 1],
    [, 1, 1, , , 1, 1],
    [, 1, 1, , , 1, 1],
@@ -396,7 +396,7 @@ const fnt9 = [
 ];
 
 
-const fnt0 = [
+const zer = [
    [, , 1, 1, 1, 1],
    [, 1, 1, , , 1, 1],
    [, 1, 1, , , 1, 1],
@@ -406,7 +406,7 @@ const fnt0 = [
    [, , 1, 1, 1, 1],
 ];
 
-const fntSlash = [
+const Slash = [
    [],
    [, , , , , , 1],
    [, , , , , 1],
@@ -416,7 +416,7 @@ const fntSlash = [
    [, 1],
 ];
 
-const fntColon = [
+const Colon = [
    [, 1,1],
    [, 1,1],
    [],
@@ -426,7 +426,7 @@ const fntColon = [
    [, 1,1],
 ];
 
-const fntDot = [
+const Dot = [
    [],
    [],
    [],
@@ -437,7 +437,7 @@ const fntDot = [
    [, 1,1],
 ]
 
-const fntNeg = [
+const Neg = [
    [],
    [],
    [],
@@ -447,7 +447,7 @@ const fntNeg = [
    [],
 ];
 
-const fntExclaim = [
+const Exclaim = [
     [, , 1, 1],
     [, , 1, 1],
     [, , 1, 1],
@@ -459,13 +459,13 @@ const fntExclaim = [
 
 
 
-const fntINDEX = {
-   'A': fntA, 'B': fntB, 'C': fntC, 'D': fntD, 'E': fntE, 'F': fntF,
-   'G': fntG, 'H': fntH, 'I': fntI, 'J': fntJ, 'K': fntK, 'L': fntL,
-   'M': fntM, 'N': fntN, 'O': fntO, 'P': fntP, 'Q': fntQ, 'R': fntR,
-   'S': fntS, 'T': fntT, 'U': fntU, 'V': fntV, 'W': fntW, 'X': fntX,
-   'Y': fntY, 'Z': fntZ, '1': fnt1, '2': fnt2, '3': fnt3, '4': fnt4,
-   '5': fnt5, '6': fnt6, '7': fnt7, '8': fnt8, '9': fnt9, '0': fnt0,
-   '/': fntSlash, ':': fntColon, '.': fntDot, '-': fntNeg, '!': fntExclaim
+const fI = {
+   'A': A, 'B': B, 'C': C, 'D': D, 'E': E, 'F': F,
+   'G': G, 'H': H, 'I': I, 'J': J, 'K': K, 'L': L,
+   'M': M, 'N': N, 'O': O, 'P': P, 'Q': Q, 'R': R,
+   'S': S, 'T': T, 'U': U, 'V': V, 'W': W, 'X': X,
+   'Y': Y, 'Z': Z, '1': one, '2': two, '3': thr, '4': fou,
+   '5': fiv, '6': six, '7': sev, '8': eig, '9': nin, '0': zer,
+   '/': Slash, ':': Colon, '.': Dot, '-': Neg, '!': Exclaim
 }
 

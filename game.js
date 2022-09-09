@@ -7,7 +7,7 @@
 let id = 0;
 const pi = Math.PI;
 let pause = 0;
-let lPrefix = "bye_dbh_" // this is for JS13K's shared localStorage
+let lP = "bye_dbh_" // this is for JS13K's shared localStorage
 const gPar = (key) => {
 
     // Address of the current window
@@ -21,22 +21,24 @@ const gPar = (key) => {
     return parameterList.get(key)
 };
 
-let getStore = (o) => {
-    return localStorage.getItem(o);
+let lS = localStorage
+
+let gS = (o) => {
+    return lS.getItem(o);
 }
-let setStore = (o, v, ops={}) => {
+let sS = (o, v, ops={}) => {
     if (ops.c) { // compression
         v = lzs.compress(v);
     }
-    localStorage.setItem(`${lPrefix}${o}`, `${v}`);
+    lS.setItem(`${lP}${o}`, `${v}`);
 }
 let o = {
 }
 
-for (let i of Object.keys(localStorage)) {
+for (let i of Object.keys(lS)) {
     console.log(i)
-    if (i.startsWith(`${lPrefix}o_`)) {
-        switch(getStore(i)) {
+    if (i.startsWith(`${lP}o_`)) {
+        switch(gS(i)) {
             case "true":
                 o[i.slice(10)] = 1
                 break;
@@ -48,7 +50,7 @@ for (let i of Object.keys(localStorage)) {
     }
 }
 
-const customLv = gPar("lv");
+const cLV = gPar("lv");
 
 class Canvas {
     constructor(id) {
@@ -59,9 +61,9 @@ class Canvas {
         // get the width and height of the canvas from CSS
         this.tW = this.c.offsetWidth;
         this.tH = this.c.offsetHeight;
-        this.camera = {x: 0, y: 0};
+        this.cam = {x: 0, y: 0};
 
-        this.mousePos = {x: 0, y: 0};
+        this.mPos = {x: 0, y: 0};
 
     }
 
@@ -71,13 +73,13 @@ class Canvas {
     }
 
     // Mouse position crap
-    getMousePos(evt) {
+    gMP(evt) {
         const rect = this.c.getBoundingClientRect(), // abs. size of element
             scaleX = this.c.width / rect.width,    // relationship bitmap vs. element for x
             scaleY = this.c.height / rect.height;  // relationship bitmap vs. element for y
 
-        this.mousePos.x = ((evt.clientX - rect.left) * scaleX) + this.camera.x;
-        this.mousePos.y = ((evt.clientY - rect.top) * scaleY) + this.camera.y;
+        this.mPos.x = ((evt.clientX - rect.left) * scaleX) + this.cam.x;
+        this.mPos.y = ((evt.clientY - rect.top) * scaleY) + this.cam.y;
 
         return {
         x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
@@ -94,16 +96,16 @@ class Canvas {
     }
 
     // Drawing
-    drawImg(img, x,y,w,h, direction=0, originx=x+w/2, originy=y+h/2) {
+    dImg(img, x, y, w, h, direction=0, originx=x+w/2, originy=y+h/2) {
         this.ctx.save();
-        this.ctx.translate(originx-this.camera.x, originy-this.camera.y);
+        this.ctx.translate(originx-this.cam.x, originy-this.cam.y);
         this.ctx.rotate(direction * pi/180);
         this.ctx.drawImage(img, (-w/2), -h/2, w, h);
         this.ctx.restore();
     }
-    sliceImage(img, x, y, w, h, cropX, cropY, cropW, cropH, direction=0) {
+    sImg(img, x, y, w, h, cropX, cropY, cropW, cropH, direction=0) {
         this.ctx.save();
-        this.ctx.translate((x+w/2)-this.camera.x, (y+h/2)-this.camera.y);
+        this.ctx.translate((x+w/2)-this.cam.x, (y+h/2)-this.cam.y);
         this.ctx.rotate(direction * pi/180);
         this.ctx.drawImage(img, cropX, cropY, cropW, cropH, -w/2, -h/2, w, h);
         this.ctx.drawImage(img, cropX, cropY, cropW, cropH, -w/2, -h/2, w, h);
@@ -111,27 +113,22 @@ class Canvas {
         // console.log(`${x}, ${y}, ${w}, ${h}, ${cropX}, ${cropY}, ${cropW}, ${cropH}`);
     }
 
-    drawImage(img, x, y, w, h, direction=0) {
+    dI(img, x, y, w, h, direction=0) {
         // alias for drawImg
-        this.drawImg(img, x, y, w, h, direction);
+        this.dImg(img, x, y, w, h, direction);
     }
 
-    drawRect(x, y, w, h, color="white") {
+    dR(x, y, w, h, color="white") {
         this.ctx.fillStyle = color;
-        this.ctx.fillRect(x-this.camera.x, y-this.camera.y, w, h);
+        this.ctx.fillRect(x-this.cam.x, y-this.cam.y, w, h);
     }
 
-    strokeRect(x, y, w, h, color) {
+    sR(x, y, w, h, color) {
         this.ctx.strokeStyle = color;
-        this.ctx.strokeRect(x-this.camera.x, y-this.camera.y, w, h);
+        this.ctx.strokeRect(x-this.cam.x, y-this.cam.y, w, h);
     }
 
-    dT(string, x, y, scaley, scalex, color, align="start", vAliign="top", ops={}) {
-
-        // console.log(ops);
-
-        // console.log(string)
-
+    dT(string, x, y, scaley, scalex, color, align="", vAliign="top") {
         string = string.toUpperCase();
         let chars = string.split("");
         // console.log(chars);
@@ -150,16 +147,12 @@ class Canvas {
             strHeight += 1;
         }
 
-        switch(align) {
-            case "center":
-            case "middle":
-                x = x - strLength/2;
-                break;
-            case "end":
-            case "right":
-                x = x - strLength;
-                break;
+        if (align === "middle") {
+            x = x - strLength / 2;
+        } else if (align === "end") {
+            x = x - strLength;
         }
+        
         switch(vAliign) {
             case "middle":
             case "center":
@@ -173,8 +166,6 @@ class Canvas {
 
         let charI = 0;
         let nextOffset = (7 * scalex);
-        let lastWasFull = false;
-
         for (let char of chars) {
 
             this.ctx.fillStyle = color;
@@ -182,17 +173,6 @@ class Canvas {
             let col = 0;
             // offset is the amount of pixels to offset the character by. you can calculate this by multiplying the current character (they're all the same size) by the scalex and scaley
             let offset = nextOffset;
-
-            if (lastWasFull) {
-                offset -= (0.5 * scalex);
-                lastWasFull = false;
-            }
-
-            if(ops.shortFullStop) {
-                if(char == ".") {
-                    lastWasFull = true;
-                }
-            }
 
             char = fI[char];
             if (char == undefined) {
@@ -203,7 +183,7 @@ class Canvas {
                     // for each pixel in the row
                     for (let c of char[cRow]) {
                         if (c == 1) {
-                            this.ctx.fillRect((x + (col * scalex) + (charI * offset)) - this.camera.x,( y + (row * scaley)) - this.camera.y, scalex, scaley);
+                            this.ctx.fillRect((x + (col * scalex) + (charI * offset)) - this.cam.x,( y + (row * scaley)) - this.cam.y, scalex, scaley);
 
                         }
                         col++;
@@ -220,32 +200,15 @@ class Canvas {
         }
 
         return {
-            "w": strLength
+            "w": strLength,
+            "h": strHeight
         }
 
     }
 
-    setFont(fontStack, size="10") {
-        this.ctx.font = `${size}px ${fontStack}`
-    }
-
-    drawLine(x1, y1, x2, y2, color) {
-        this.ctx.strokeStyle = color;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x1-this.camera.x, y1-this.camera.y);
-        this.ctx.lineTo(x2, y2);
-        this.ctx.stroke();
-    }
-
-    // Camera stuff
-    mvCamera(x, y) {
-        this.camera.x += x;
-        this.camera.y += y;
-    }
-
-    setCamera(x, y, s=1) {
-        this.camera.x = x;
-        this.camera.y = y;
+    sC(x, y) {
+        this.cam.x = x;
+        this.cam.y = y;
     }
 
 }
@@ -277,7 +240,7 @@ class Room {
         id += 1;
         this.name = name;
         this.objects = [];
-        this.background = "#252525";
+        this.background = "#111";
         this.w = c.w;
         this.h = c.h;
     }
@@ -300,36 +263,28 @@ class Room {
         }
     }
 
-    drawGUI() {
+    dGUI() {
 
     }
 
-    keyDown(key) {
+    kD(key) {
         // console.log(key);
     }
-    keyHeld(key) {
+    kH(key) {
         // console.log(key);
     }
     click(x, y) {
         // console.log(x, y);
     }
-    mHeld(x,y){
-
-    }
 
     start() {
-        c.camera = {x:0,y:0}
+        c.cam = {x:0,y:0}
     }
 
 }
 
 // INIT CANVAS
-let fI = fntINDEX; // in letters.js
 let c = new Canvas('gameCanvas');
-// check if the canvas is supported
-if(!c.ctx) {
-    alert("Your browser does not support the canvas element");
-}
 gameCtx = c.ctx;
 c.fill("#151f1f");
 gameCtx.imageSmoothingEnabled = false;
@@ -338,14 +293,14 @@ let dPM = _=>{
     c.ctx.globalAlpha = .7;
     c.fill("#000");
     c.ctx.globalAlpha = .85;
-    c.drawRect((c.w/2-150)+c.camera.x,120+c.camera.y, 300,120, "#000")
+    c.dR((c.w/2-150)+c.cam.x,120+c.cam.y, 300,120, "#000")
     c.ctx.globalAlpha = 1;
-    c.dT("paused", c.w/2+c.camera.x,c.h/2-30+c.camera.y, 3,3,"#fff", "middle","middle");
+    c.dT("paused", c.w/2+c.cam.x,c.h/2-30+c.cam.y, 3,3,"#fff", "middle","middle");
     for (let o in gameRoom.pseo) {
-        let t = c.dT(gameRoom.pseo[o].t, c.w/2+c.camera.x, c.h/2+(o*9)+c.camera.y, 1,1,"#fff", "middle");
+        let t = c.dT(gameRoom.pseo[o].t, c.w/2+c.cam.x, c.h/2+(o*9)+c.cam.y, 1,1,"#fff", "middle");
         if (o == gameRoom.pses) {
-            let a = images.ui.a;
-            c.drawImg(a, ((c.w/2+c.camera.x)-t.w/2)-8, c.h/2+(o*9)+c.camera.y, 6,7)
+            let a = img.i.a;
+            c.dImg(a, ((c.w/2+c.cam.x)-t.w/2)-8, c.h/2+(o*9)+c.cam.y, 6,7)
         }
     }
 }
@@ -353,77 +308,72 @@ let dPM = _=>{
 c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
 
 // Load images
-let images = {
-    "mouse": {
+let img = {
+    "i": {
         "ingame": "./aimerthing.png",
-        "cursor": "./cursor.png"
-    },
-    "level": {
+        "cursor": "./cursor.png",
         "tileset": "./t.png",
-        "human": "./human.png"
-    },
-    "player": {
+        "human": "./human.png",
         "car": "./hamster.png",
         "gun": "./gun.png",
-    },
-    "ui": {
         "a": "./arw.png" // arrow
     }
 };
 
 let loader = new Room("loader");
-let loadingText = "Loading...";
-let loadingError = 0;
-loader.drawGUI = () => {
-    c.dT(loadingText, c.w / 2, c.h / 2, 2, 2, "white", "middle");
-    if (loadingError) {
-        c.dT(loadingErrorText, c.w / 2, c.h / 2 + 20, 1, 1, "red", "middle");
+let lText = "Loading...";
+let lErr = 0;
+let lErrT;
+loader.dGUI = () => {
+    c.dT(lText, c.w / 2, c.h / 2, 2, 2, "white", "middle");
+    if (lErr) {
+        c.dT(lErrT, c.w / 2, c.h / 2 + 20, 1, 1, "red", "middle");
     }
 }
 let rooms = [];
 
-let loadedImages = 0;
-let totalImages = 0;
+let limg = 0;
+let timg = 0;
 
 // count the total number of images to load
-for (let key in images) {
-    for (let subkey in images[key]) {
-        totalImages++;
+for (let key in img) {
+    for (let subkey in img[key]) {
+        timg++;
     }
 }
 
-loadingText = `Loading...`;
+lText = `Loading...`;
 
-loadingText = `Loading images (${loadedImages} / ${totalImages})`
+lText = `Loading images (${limg} / ${timg})`
 
 
 // after all images are loaded, and no errors occured, start the game
-for (let key in images) {
-    for (let subkey in images[key]) {
+for (let key in img) {
+    for (let subkey in img[key]) {
 
         // attempt to load the image
         let IMG = new Image();
         IMG.addEventListener('load', () => {
-            loadedImages++;
-            loadingText = `Loading images (${loadedImages} / ${totalImages})`
-            if (loadedImages == totalImages) {
+            limg++;
+            lText = `Loading images (${limg} / ${timg})`
+            if (limg == timg) {
                 loader.step = () => {
                     cRoom = rooms[1];
                 }
-                loadingText = "Loaded! Please wait...";
+                lText = "Loaded! Please wait...";
             }
         });
         IMG.addEventListener('error', (e) => {
-            loadingError = 1;
-            loadingErrorText = `Error loading image ${e.target.src}`;
+            lErr = 1;
+            lErrT = `Error loading image ${e.target.src}`;
         } );
-        IMG.src = images[key][subkey];
+        IMG.src = img[key][subkey];
 
         // add the image to the images object
-        images[key][subkey] = IMG;
+        img[key][subkey] = IMG;
 
         // draw the loading text by drawing a rectangle over the previous text, and drawing the new text
-        loadingText = `Loading images (${loadedImages} / ${totalImages})`
+        lText = `Loading images (${limg} / ${timg})`
 
     }
 }
@@ -435,35 +385,17 @@ let levels = [
 ]
 
 hamsterRef = {
-    "file": images.player.car,
+    "file": img.i.car,
     "nl": {
-        "x": 1,
-        "y": 1,
-        "w": 32,
-        "h": 16,
-    },
-    "b": {
-        "x": 35,
-        "y": 1,
-        "w": 32,
-        "h": 16,
-    },
-    "br": {
-        "x": 1,
-        "y": 20,
-        "w": 32,
-        "h": 16,
-    },
-    "r": {
-        "x": 35,
-        "y": 20,
+        "x": 0,
+        "y": 0,
         "w": 32,
         "h": 16,
     }
 }
 
-let levelRef = {
-    "file": images.level.tileset,
+let lRef = {
+    "file": img.i.tileset,
     "default": {
         "x": 0,
         "y": 0,
@@ -535,16 +467,16 @@ let levelRef = {
 }
 
 
-for (let tile of levelRef.tiles) {
+for (let tile of lRef.tiles) {
     // if the tile is missing properties from the default, add them
-    for (let key in levelRef.default) {
+    for (let key in lRef.default) {
         if (!tile[key]) {
-            tile[key] = levelRef.default[key];
+            tile[key] = lRef.default[key];
         }
     }
 }
 
-console.debug(images)
+console.debug(img)
 let targFPS = 60;
 let frame = 0;
 
@@ -568,18 +500,18 @@ menu.o = [
 ]
 
 
-menu.drawGUI = () => {
+menu.dGUI = () => {
     c.dT("Death by Hamster", c.w/2, c.h/2-25, 4, 4, "white", "middle", "middle");
     c.dT("W/Up or S/Down to select", c.w/2, c.h/2, 1,1,"gray","middle","middle");
     c.dT("Space or ENTER to activate", c.w/2, c.h/2+8, 1,1,"gray","middle","middle")
     for (let o in menu.o) {
         let txt = c.dT(`${menu.o[o].t}`, c.w/2, (c.h/2+50)+(o*20), 2,2,"#fff","middle","top");
         if (menu.s == o) {
-            let a = images.ui.a;
+            let a = img.i.a;
             let ap = ((c.w/2)-(txt.w/2))-a.width-4;
             let ap2 = ((c.w/2)+(txt.w/2))+a.width-4;
-            c.drawImg(a, ap, (c.h/2+50)+(o*20), a.width*2, a.height*2)
-            c.drawImg(a, ap2, (c.h/2+50)+(o*20), a.width*2, a.height*2, 180)
+            c.dImg(a, ap, (c.h/2+50)+(o*20), a.width*2, a.height*2)
+            c.dImg(a, ap2, (c.h/2+50)+(o*20), a.width*2, a.height*2, 180)
         }
     }
 }
@@ -608,7 +540,7 @@ const setRoom = (roomI) => {
     cRoom = rooms[roomI];
     cRoom.start();
 }
-menu.keyDown = (key) => {
+menu.kD = (key) => {
     if (key == "ArrowUp" || key == "KeyW") {
         menu.s -= 1
         if (menu.s < 0) {
@@ -636,13 +568,13 @@ let player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 20;
 player.direction = 0;
-player.sprite = images.player.car;
+player.sprite = img.i.car;
 player.crop = hamsterRef.nl;
 player.x = 0;
 player.y = 0;
 player.w = player.crop.w*2;
 player.h = player.crop.h*2;
-gameRoom.o = [{t:"Next Level",a:_=>{lvlS.s += 1; lvlS.keyDown("Space"); gameRoom.tutorial=0}}, {t:"Level Select",a:_=>{setRoom(4)}}, {t:"Menu", a:_=>{setRoom(1)}}]
+gameRoom.o = [{t:"Next Level",a:_=>{lvlS.s += 1; lvlS.kD("Space"); gameRoom.tutorial=0}}, {t:"Level Select",a: _=>{setRoom(4)}}, {t:"Menu", a: _=>{setRoom(1)}}]
 
 gameRoom.s = 0
 gameRoom.pseo = [{t:"Back to Menu", a:_=>{setRoom(1)}},{t:"Level Select",a:_=>{setRoom(4)}}]
@@ -713,7 +645,7 @@ player.step = _=> {
     }
 
     // keep the camera centered on the player
-    c.setCamera(player.x - c.w/2, player.y - c.h/2);
+    c.sC(player.x - c.w/2, player.y - c.h/2);
 
     player.oldDir = player.direction;
     player.xy = [player.x, player.y]
@@ -724,11 +656,11 @@ console.log(player);
 
 player.draw = _=> {
     // draw this.sprite at this.x, this.y
-    c.sliceImage(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction);
+    c.sImg(player.sprite, player.x, player.y, player.w, player.h, player.crop.x, player.crop.y, player.crop.w, player.crop.h, player.direction);
     // c.dT(`${player.x/64} ${player.y/64}`, player.x, player.y, 1,1,"white","middle","middle");
     // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
-    let gun = images.player.gun;
+    let gun = img.i.gun;
     let gunOx = 13;
     let gunOy = 0;
 
@@ -744,16 +676,16 @@ player.draw = _=> {
     if (!pause&&!gameRoom.finish) {
 
         // get the angle between the gun and the mouse
-        player.aim = Math.atan2(c.mousePos.y - guny, c.mousePos.x - gunx) * 180 / pi;
+        player.aim = Math.atan2(c.mPos.y - guny, c.mPos.x - gunx) * 180 / pi;
 
     }
 
     // canvas.drawText(`Width${gun.width} Height${gun.height}`, gunx, guny-15, 1, 1, "green", "middle", "middle");
-    c.drawImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
+    c.dImg(gun, gunx, guny, gun.width*2, gun.height*2, player.aim, gunx, guny); // these two vars at the end are where the gun's center is placed
     // canvas.drawRect(gunx, guny, 1,1, "red");
 
     for (let checkpoint of player.checkpoints) {
-        c.drawRect(checkpoint.x, checkpoint.y, 1,1, "black");
+        c.dR(checkpoint.x, checkpoint.y, 1,1, "black");
 
     }
 
@@ -791,14 +723,14 @@ player.shoot = () => {
         bullet.y += bullet.speed * Math.sin(bullet.direction * pi / 180);
     }
     bullet.draw = () => {
-        c.drawRect(bullet.x, bullet.y, bullet.w,bullet.h, "#2f2f2f");
+        c.dR(bullet.x, bullet.y, bullet.w,bullet.h, "#2f2f2f");
     }
     cRoom.spawn(bullet);
 }
 
 
 
-gameRoom.keyDown = (key) => {
+gameRoom.kD = (key) => {
     if (!pause&&!gameRoom.finish){
         if (key == "ArrowUp" || key == "KeyW") {
             player.speed += player.accel;
@@ -835,8 +767,8 @@ gameRoom.keyDown = (key) => {
                 let y = Math.floor(player.checkpoints[i].y / 64);
 
                 for (let tile of gameRoom.level) {
-                    if (levelRef.tiles[tile[0]].type == "vent" && tile[1] == x && tile[2] == y) {
-                        for (let tile of gameRoom.level) if (levelRef.tiles[tile[0]].type == "vent" && !(tile[1] == x) && !(tile[2] == y)) {
+                    if (lRef.tiles[tile[0]].type == "vent" && tile[1] == x && tile[2] == y) {
+                        for (let tile of gameRoom.level) if (lRef.tiles[tile[0]].type == "vent" && !(tile[1] == x) && !(tile[2] == y)) {
                             console.log (x,y)
                             console.log(tile[1], tile[2])
                             player.x = tile[1]*64;
@@ -894,7 +826,7 @@ gameRoom.keyDown = (key) => {
         }
     }
 }
-gameRoom.keyHeld = (key) => {
+gameRoom.kH = (key) => {
     if (!pause&&!gameRoom.finish){
         if (key == "ArrowUp" || key == "KeyW") {
             player.speed += player.accel;
@@ -931,7 +863,7 @@ gameRoom.checkwall = (tx,ty) => {
     tx = Math.floor(tx);
     ty = Math.floor(ty);
     for (let tile of gameRoom.level) {
-        if (levelRef.tiles[tile[0]].type == "wall" && tile[1] == tx && tile[2] == ty) {
+        if (lRef.tiles[tile[0]].type == "wall" && tile[1] == tx && tile[2] == ty) {
             return true;
         }
     }
@@ -940,8 +872,8 @@ gameRoom.checkwall = (tx,ty) => {
 
 gameRoom.start = () =>{
 
-    if (customLv) {
-        gameRoom.level = customLv
+    if (cLV) {
+        gameRoom.level = cLV
     }
 
     if (gameRoom.li) {
@@ -972,7 +904,7 @@ gameRoom.start = () =>{
         }
         if(tile[0]===10){
 
-            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), images.level.human)
+            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), img.i.human)
             pooman.w = 26*2
             pooman.h = 16*2
             pooman.bh = Math.floor(Math.random()*3);
@@ -1011,8 +943,8 @@ gameRoom.start = () =>{
                 pooman.timer--;
             }
             pooman.draw = _=>{
-                c.sliceImage(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bb*pooman.w/2, 0, pooman.w/2, pooman.h/2, pooman.direction);
-                c.sliceImage(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bh*pooman.w/2, pooman.h/2, pooman.w/2, pooman.h/2, pooman.direction);
+                c.sImg(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bb*pooman.w/2, 0, pooman.w/2, pooman.h/2, pooman.direction);
+                c.sImg(pooman.sprite, pooman.x, pooman.y, pooman.w, pooman.h, pooman.bh*pooman.w/2, pooman.h/2, pooman.w/2, pooman.h/2, pooman.direction);
                 // c.dT(`${pooman.timer} :: ${pooman.direction}`, pooman.x, pooman.y, 1, 1, "white", "middle", "middle");
             }
             pooman.timer = 90;
@@ -1042,7 +974,7 @@ gameRoom.draw = _=> {
 
     for (let tile of gameRoom.level) {
         // [index, x, y]
-        c.sliceImage(levelRef.file, (tile[1]*32)*2, (tile[2]*32)*2, 32*2,32*2, levelRef.tiles[tile[0]].x, 0, 32, 32);
+        c.sImg(lRef.file, (tile[1]*32)*2, (tile[2]*32)*2, 32*2,32*2, lRef.tiles[tile[0]].x, 0, 32, 32);
     }
 
     if (gameRoom.tutorial) {
@@ -1054,7 +986,7 @@ gameRoom.draw = _=> {
 
         c.dT("As a member of the hamster uprising,", 6*64, 3*64+25, 1,1, "black");
         c.dT("you might want to kill any humans", 6*64, 3*64+35, 1,1, "black");
-        c.dT("you find!", 10*64-16, 3*64+45, 1,1, "black", "right");
+        c.dT("you find!", 10*64-16, 3*64+45, 1,1, "black", "end");
 
 
     }
@@ -1063,8 +995,8 @@ gameRoom.draw = _=> {
     }
 }
 
-gameRoom.drawGUI = _=>{
-    c.dT(`Humans:${gameRoom.humans}`, (c.w-10)+c.camera.x, 10+c.camera.y, 2,2,"#fff", "end")
+gameRoom.dGUI = _=>{
+    c.dT(`Humans:${gameRoom.humans}`, (c.w-10)+c.cam.x, 10+c.cam.y, 2,2,"#fff", "end")
 
     if (pause) {
         dPM(gameRoom);
@@ -1073,16 +1005,16 @@ gameRoom.drawGUI = _=>{
         c.ctx.globalAlpha = .7;
         c.fill("#000");
         c.ctx.globalAlpha = .85;
-        c.drawRect((c.w/2-150)+c.camera.x,120+c.camera.y, 300,150, "#000")
+        c.dR((c.w/2-150)+c.cam.x,120+c.cam.y, 300,150, "#000")
         c.ctx.globalAlpha = 1;
 
 
-        c.dT("You Won!", c.w/2+c.camera.x,c.h/2-30+c.camera.y, 3,3,"#fff", "middle","middle");
+        c.dT("You Won!", c.w/2+c.cam.x,c.h/2-30+c.cam.y, 3,3,"#fff", "middle","middle");
         for (let o in gameRoom.o) {
-            let t = c.dT(gameRoom.o[o].t, c.w/2+c.camera.x, c.h/2+(o*9)+c.camera.y, 1,1,"#fff", "middle");
+            let t = c.dT(gameRoom.o[o].t, c.w/2+c.cam.x, c.h/2+(o*9)+c.cam.y, 1,1,"#fff", "middle");
             if (o == gameRoom.s) {
-                let a = images.ui.a;
-                c.drawImg(a, ((c.w/2+c.camera.x)-t.w/2)-8, c.h/2+(o*9)+c.camera.y, 6,7)
+                let a = img.i.a;
+                c.dImg(a, ((c.w/2+c.cam.x)-t.w/2)-8, c.h/2+(o*9)+c.cam.y, 6,7)
             }
         }
     }
@@ -1090,7 +1022,7 @@ gameRoom.drawGUI = _=>{
 
 let editor = new Room("Editor");
 editor.i = 0;
-editor.t = levelRef;
+editor.t = lRef;
 editor.l = []
 editor.saving = false
 editor.sa = 0
@@ -1101,15 +1033,15 @@ editor.start = _=>{
 editor.draw = _=>{
     for (let tile of editor.l) {
         // [index, x, y]
-        c.sliceImage(levelRef.file, (tile[1]*32)+editor.dPos[0], tile[2]*32+editor.dPos[1], 32,32, tile[0]*32, 0, 32, 32);
-        c.drawRect(editor.dPos[0], editor.dPos[1], 1,1, "red")
+        c.sImg(lRef.file, (tile[1]*32)+editor.dPos[0], tile[2]*32+editor.dPos[1], 32,32, tile[0]*32, 0, 32, 32);
+        c.dR(editor.dPos[0], editor.dPos[1], 1,1, "red")
     }
 }
 editor.step = _=>{
     if (editor.i < 0) {
-        editor.i = levelRef.tiles.length-1;
+        editor.i = lRef.tiles.length-1;
     }
-    if (editor.i > levelRef.tiles.length-1) {
+    if (editor.i > lRef.tiles.length-1) {
         editor.i = 0;
     }
 }
@@ -1153,7 +1085,7 @@ editor.click = (x,y)=>{
         editor.sa = 0
     }
 }
-editor.keyHeld = (key) => {
+editor.kH = (key) => {
     switch (key) {
         case "KeyW":
         case "ArrowUp":
@@ -1174,11 +1106,11 @@ editor.keyHeld = (key) => {
     }
 }
 
-editor.drawGUI = _=>{
-    c.drawRect(0,0,c.w,50,"gray")
+editor.dGUI = _=>{
+    c.dR(0,0,c.w,50,"gray")
     c.dT(`DBH Editor::${editor.n}`, 15,25,2,2,"#fff","start","middle");
     let s = c.dT(`Save`, c.w-15,25,2,2,"#fff","end","middle");
-    if (c.mousePos.x > (c.w-30)-s.w && c.mousePos.y < 50) {
+    if (c.mPos.x > (c.w-30)-s.w && c.mPos.y < 50) {
         // console.debug((c.w-30)-s.w)
         c.dT(`Save`, c.w-15,25,2,2,"#e5e5e5","end","middle");
     }
@@ -1188,24 +1120,24 @@ editor.drawGUI = _=>{
         c.dT(`Save`, c.w-15,25,2,2,"#1fccdc","end","middle");
     }
 
-    c.sliceImage(editor.t.file, c.mousePos.x+16,c.mousePos.y+16,32,32,32*editor.i,0,32,32);
+    c.sImg(editor.t.file, c.mPos.x+16,c.mPos.y+16,32,32,32*editor.i,0,32,32);
 }
 
 
 
-lvlS.drawGUI = () => {
+lvlS.dGUI = () => {
     c.dT("Death by Hamster", c.w/2, 25, 2, 2, "white", "middle", "top");
     c.dT("Level Select", c.w/2, 44, 1,1,"gray","middle","middle");
     for (let o in lvlS.o) {
         let n = parseInt(o)+1
         c.dT(`${n}`, (20)+(32*n), 70, 2, 2, "#fff", "middle", "middle")
         if (o == lvlS.s) {
-            c.strokeRect((20-14)+(32*n), 70-16, 32, 32, "#fff")
+            c.sR((20-14)+(32*n), 70-16, 32, 32, "#fff")
         }
     }
 }
 
-lvlS.keyDown = (key) => {
+lvlS.kD = (key) => {
     if (key == "ArrowUp"||key=="ArrowRight"||key == "KeyW"||key=="KeyD") {
         lvlS.s -= 1
         if (lvlS.s < 0) {
@@ -1236,31 +1168,31 @@ options.s = 0
 options.ops = o;
 options.o = [{
     "t": "Show FPS",
-    "a": _=>{ o.showFPS = !o.showFPS; setStore("o_showFPS", o.showFPS) },
+    "a": _=>{ o.showFPS = !o.showFPS; sS("o_showFPS", o.showFPS) },
     "v": "showFPS"
 }, {
     "t": "Menu",
     "a": _=>{ setRoom(0) }
 }]
 
-options.drawGUI = () => {
+options.dGUI = () => {
     c.dT("Settings", c.w/2, 25, 2, 2, "#fff", "middle", "top");
     for (let o in options.o) {
         let s = options.o[o]
         let txt = c.dT(`${options.o[o].t}`, 150, 50+(o*20), 2,2,"#fff","left","top");
         if (options.s == o) {
-            let a = images.ui.a;
-            c.drawImg(a, 136, 50 + (o * 20), a.width * 2, a.height * 2)
+            let a = img.i.a;
+            c.dImg(a, 136, 50 + (o * 20), a.width * 2, a.height * 2)
         }
         let v = options.ops[s.v]
         if (!(v==undefined)){
-            c.dT(`${v}`, 450, 50+(o*20), 2,2,"#fff", "right");
+            c.dT(`${v}`, 450, 50+(o*20), 2,2,"#fff", "end");
 
         }
     }
 }
 
-options.keyDown = (key) => {
+options.kD = (key) => {
     if (key == "ArrowUp"||key=="ArrowRight"||key == "KeyW") {
         options.s -= 1
         if (options.s < 0) {
@@ -1311,14 +1243,14 @@ let leftclicked = false;
 let rightclicked = false
 
 c.c.addEventListener('mousemove', (e) => {
-    mse = c.getMousePos(e);
+    mse = c.gMP(e);
 } );
 
 c.c.addEventListener("mousedown", (e) => {
     // console.log(e);
     e.preventDefault()
-    lastClick = c.getMousePos(e);
-    mse = c.getMousePos(e);
+    lastClick = c.gMP(e);
+    mse = c.gMP(e);
     switch (e.button) {
         case 0: // left
             leftclicked=1;
@@ -1330,8 +1262,8 @@ c.c.addEventListener("mousedown", (e) => {
 });
 c.c.addEventListener("mouseup", (e)=>{
     // console.log(e);
-    lastClick = c.getMousePos(e);
-    mse = c.getMousePos(e);
+    lastClick = c.gMP(e);
+    mse = c.gMP(e);
 })
 c.c.oncontextmenu = _=>{return 0;}
 
@@ -1357,10 +1289,10 @@ try {
         for (let key in keysPressed) {
             if (keysPressed[key]) {
                 if (!keysLastPressed[key]) {
-                    cRoom.keyDown(key);
+                    cRoom.kD(key);
                     keysLastPressed[key] = true;
                 } else if (keysLastPressed[key]) {
-                    cRoom.keyHeld(key);
+                    cRoom.kH(key);
                 }
             }
         }
@@ -1371,19 +1303,19 @@ try {
 
         cRoom.step();
         cRoom.draw();
-        cRoom.drawGUI();
+        cRoom.dGUI();
 
         if (o.showFPS){
-            c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.camera.x, 0+c.camera.y, 1, 1, "#fafafa", "left", "top");
+            c.dT(`FPS:${Math.round(1000 / (Date.now() - lastTime))}`, 0+c.cam.x, 0+c.cam.y, 1, 1, "#fafafa", "left", "top");
         }
 
         switch (cRoom.name) {
             case "menu":
             case "Editor":
-                c.ctx.drawImage(images.mouse.cursor, Math.round(mse.x), Math.round(mse.y), images.mouse.cursor.width*2, images.mouse.cursor.height*2);
+                c.ctx.drawImage(img.i.cursor, Math.round(mse.x), Math.round(mse.y), img.i.cursor.width*2, img.i.cursor.height*2);
                 break;
             case "Game":
-                c.ctx.drawImage(images.mouse.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
+                c.ctx.drawImage(img.i.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
                 break;
         }
         lastTime = Date.now();

@@ -1,0 +1,4 @@
+# for compiling
+requests
+python-dotenv
+tinify

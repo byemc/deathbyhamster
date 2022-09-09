@@ -1,0 +1,3 @@
+
+# for holding API keys for TinyPNG
+.env
