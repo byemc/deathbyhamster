@@ -34,6 +34,8 @@ jobs:
         run: python3 -m pip install -r requirements.txt && npm i tensify
       - name: minify
         run: python3 minify.py
+        env:
+          tinify_key: ${{ secrets.tinify_key }}
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
