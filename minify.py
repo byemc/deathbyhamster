@@ -36,7 +36,10 @@ except:
     print("no need to delete anything")
 os.system(f"advzip {output_dir}dbh.zip --add build --shrink-insane -4")
 
-progress = os.path.getsize(f"{output_dir}dbh.zip") / 1024
+try:
+    progress = os.path.getsize(f"{output_dir}dbh.zip") / 1024
 
-# make a loading bar showing progress to 13KB
-print(f"[{'#'*(int((progress/13)*100)//10)}] {((progress/13)*100)}% ({round(progress, 3)} KB / 13 KB)")
+    # make a loading bar showing progress to 13KB
+    print(f"[{'#'*(int((progress/13)*100)//10)}] {((progress/13)*100)}% ({round(progress, 3)} KB / 13 KB)")
+except:
+    print("Done!")
