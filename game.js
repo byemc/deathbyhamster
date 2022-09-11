@@ -299,7 +299,7 @@ let dPM = _=>{
     for (let o in gameRoom.pseo) {
         let t = c.dT(gameRoom.pseo[o].t, c.w/2+c.cam.x, c.h/2+(o*9)+c.cam.y, 1,1,"#fff", "middle");
         if (o == gameRoom.pses) {
-            let a = img.i.a;
+            let a = img.a;
             c.dImg(a, ((c.w/2+c.cam.x)-t.w/2)-8, c.h/2+(o*9)+c.cam.y, 6,7)
         }
     }
@@ -309,7 +309,6 @@ c.dT("Death By Hamster", c.w / 2, c.h / 2 - 40, 2, 2, "white", "middle");
 
 // Load images
 let img = {
-    "i": {
         "ingame": "./aimerthing.png",
         "cursor": "./cursor.png",
         "tileset": "./t.png",
@@ -317,13 +316,22 @@ let img = {
         "car": "./hamster.png",
         "gun": "./gun.png",
         "a": "./arw.png" // arrow
-    }
 };
+
+let snd = {
+    select: "./blip.mp3"
+}
+
+const beep = _=> {
+    snd.select.pause()
+    snd.select.currentTime = 0;
+    snd.select.play()
+}
 
 let loader = new Room("loader");
 let lText = "Loading...";
-let lErr = 0;
 let lErrT;
+let lErr;
 loader.dGUI = () => {
     c.dT(lText, c.w / 2, c.h / 2, 2, 2, "white", "middle");
     if (lErr) {
@@ -333,49 +341,53 @@ loader.dGUI = () => {
 let rooms = [];
 
 let limg = 0;
-let timg = 0;
-
-// count the total number of images to load
-for (let key in img) {
-    for (let subkey in img[key]) {
-        timg++;
-    }
-}
+let timg = 7;
 
 lText = `Loading...`;
 
-lText = `Loading images (${limg} / ${timg})`
-
-
 // after all images are loaded, and no errors occured, start the game
 for (let key in img) {
-    for (let subkey in img[key]) {
-
-        // attempt to load the image
-        let IMG = new Image();
-        IMG.addEventListener('load', () => {
-            limg++;
-            lText = `Loading images (${limg} / ${timg})`
-            if (limg == timg) {
-                loader.step = () => {
-                    cRoom = rooms[1];
-                }
-                lText = "Loaded! Please wait...";
-            }
-        });
-        IMG.addEventListener('error', (e) => {
-            lErr = 1;
-            lErrT = `Error loading image ${e.target.src}`;
-        } );
-        IMG.src = img[key][subkey];
-
-        // add the image to the images object
-        img[key][subkey] = IMG;
-
-        // draw the loading text by drawing a rectangle over the previous text, and drawing the new text
+    // attempt to load the image
+    let IMG = new Image();
+    IMG.addEventListener('load', () => {
+        limg++;
         lText = `Loading images (${limg} / ${timg})`
+    });
+    IMG.addEventListener('error', (e) => {
+        lErr = 1;
+        lErrT = `Error loading image ${e.target.src}`;
+    } );
+    IMG.src = img[key];
 
-    }
+    // add the image to the images object
+    img[key] = IMG;
+}
+
+console.log("SAAA")
+
+let lsnd = 0;
+let tsnd = 0;
+
+for (let key in snd) {
+    let SND = new Audio(snd[key]);
+    // SND.addEventListener('load', () => {
+    //     lsnd++;
+    //     lText = `Loading sounds (${lsnd} / ${tsnd})`
+    //     if (lsnd == tsnd) {
+    //         console.log("Finish")
+    //     }
+    // });
+    // SND.addEventListener('error', (e) => {
+    //     lErr = 1;
+    //     lErrT = `Error loading image ${e.target.src}`;
+    // } );
+
+    // add the image to the images object
+    snd[key] = SND;
+}
+
+loader.step = _=> {
+    setRoom(1)
 }
 
 let levels = [
@@ -385,7 +397,7 @@ let levels = [
 ]
 
 hamsterRef = {
-    "file": img.i.car,
+    "file": img.car,
     "nl": {
         "x": 0,
         "y": 0,
@@ -395,7 +407,7 @@ hamsterRef = {
 }
 
 let lRef = {
-    "file": img.i.tileset,
+    "file": img.tileset,
     "default": {
         "x": 0,
         "y": 0,
@@ -507,7 +519,7 @@ menu.dGUI = () => {
     for (let o in menu.o) {
         let txt = c.dT(`${menu.o[o].t}`, c.w/2, (c.h/2+50)+(o*20), 2,2,"#fff","middle","top");
         if (menu.s == o) {
-            let a = img.i.a;
+            let a = img.a;
             let ap = ((c.w/2)-(txt.w/2))-a.width-4;
             let ap2 = ((c.w/2)+(txt.w/2))+a.width-4;
             c.dImg(a, ap, (c.h/2+50)+(o*20), a.width*2, a.height*2)
@@ -541,20 +553,27 @@ const setRoom = (roomI) => {
     cRoom.start();
 }
 menu.kD = (key) => {
-    if (key == "ArrowUp" || key == "KeyW") {
-        menu.s -= 1
-        if (menu.s < 0) {
-            menu.s = menu.o.length-1
-        }
-    }
-    if (key == "ArrowDown" || key == "KeyS") {
-        menu.s += 1
-        if (menu.s > menu.o.length-1) {
-            menu.s = 0
-        }
-    }
-    if (key == "Space" || key == "Enter") {
-        menu.o[menu.s].a();
+    switch (key) {
+        case "ArrowUp":
+        case "KeyW":
+            menu.s -= 1
+            if (menu.s < 0) {
+                menu.s = menu.o.length - 1
+            }
+            beep()
+            break;
+        case "ArrowDown":
+        case "KeyS":
+            menu.s += 1
+            if (menu.s > menu.o.length - 1) {
+                menu.s = 0
+            }
+            beep()
+            break;
+        case "Space":
+        case "Enter":
+            menu.o[menu.s].a();
+            break;
     }
 }
 
@@ -568,7 +587,7 @@ let player   = new Entity("Player", 0,0);
 player.speed = 0;
 player.maxSpeed = 20;
 player.direction = 0;
-player.sprite = img.i.car;
+player.sprite = img.car;
 player.crop = hamsterRef.nl;
 player.x = 0;
 player.y = 0;
@@ -583,6 +602,7 @@ player.oldDir = 0;
 
 player.step = _=> {
     // move in this.direction, which is an angle in degrees
+    player.tooltip = ""
     player.x += player.speed * Math.cos(player.direction * pi / 180);
     player.y += player.speed * Math.sin(player.direction * pi / 180);
     // check that the player won't go into a wall on the next step, and if so, stop.
@@ -629,18 +649,18 @@ player.step = _=> {
 
         player.checkpoints.push({x: pointX, y: pointY});
 
-        player.speed *= 0.9;
-
     }
 
     for (let checkpoint of player.checkpoints) {
         let x = checkpoint.x / 64;
         let y = checkpoint.y / 64;
-        if (gameRoom.checkwall(x, y)) {
+        if (gameRoom.checktile(x, y, "wall")) {
             player.direction = player.oldDir;
             player.x = player.xy[0];
             player.y = player.xy[1];
-            player.speed -= 0.1;
+            player.speed *= 0.001;
+        } else if (gameRoom.checktile(x, y, "vent")) {
+            player.tooltip = "Press SHIFT to vent"
         }
     }
 
@@ -649,6 +669,8 @@ player.step = _=> {
 
     player.oldDir = player.direction;
     player.xy = [player.x, player.y]
+
+    player.speed *= .99
 
 }
 
@@ -660,7 +682,7 @@ player.draw = _=> {
     // c.dT(`${player.x/64} ${player.y/64}`, player.x, player.y, 1,1,"white","middle","middle");
     // canvas.strokeRect(player.x, player.y, player.w, player.h, "white");
 
-    let gun = img.i.gun;
+    let gun = img.gun;
     let gunOx = 13;
     let gunOy = 0;
 
@@ -689,6 +711,10 @@ player.draw = _=> {
 
     }
 
+    if (player.tooltip) {
+        c.dT(player.tooltip, player.x+32, player.y-16, 1, 1, "#64bee3", "middle")
+    }
+
 }
 
 player.shoot = () => {
@@ -715,7 +741,7 @@ player.shoot = () => {
             }
 
         }
-        if (gameRoom.checkwall(bullet.x/64,bullet.y/64)) {
+        if (gameRoom.checktile(bullet.x/64,bullet.y/64)) {
             cRoom.objects.splice(cRoom.objects.indexOf(bullet), 1);
         }
         // if it doesn't, move the bullet
@@ -732,53 +758,57 @@ player.shoot = () => {
 
 gameRoom.kD = (key) => {
     if (!pause&&!gameRoom.finish){
-        if (key == "ArrowUp" || key == "KeyW") {
-            player.speed += player.accel;
-            if (player.speed > player.maxSpeed) {
-                player.speed = player.maxSpeed;
-            }
-        }
-        if (key == "ArrowDown" || key == "KeyS") {
-            player.speed -= player.accel*.8
-            if (player.speed < -player.maxSpeed) {
-                player.speed = -player.maxSpeed;
-            }
-        }
-        if (key == "ArrowLeft" || key == "KeyA") {
-            player.direction -= 2.5;
-            if (player.direction < 0) {
-                player.direction = 360;
-            }
-        }
-        if (key == "ArrowRight" || key == "KeyD") {
-            player.direction += 2.5;
-            if (player.direction > 360) {
-                player.direction = 0;
-            }
-        }
-        if (key == "Space") {
-            player.shoot();
-        }
+        switch (key) {
+            case "ArrowUp":
+            case "KeyW":
+                player.speed += player.accel;
+                if (player.speed > player.maxSpeed) {
+                    player.speed = player.maxSpeed;
+                }
+                break;
+            case "ArrowDown":
+            case "KeyS":
+                player.speed -= player.accel * .8
+                if (player.speed < -player.maxSpeed) {
+                    player.speed = -player.maxSpeed;
+                }
+                break;
+            case "ArrowLeft":
+            case "KeyA":
+                player.direction -= 2.5;
+                if (player.direction < 0) {
+                    player.direction = 360;
+                }
+                break;
+            case "ArrowRight":
+            case "KeyD":
+                player.direction += 2.5;
+                if (player.direction > 360) {
+                    player.direction = 0;
+                }
+                break;
+            case "Space":
+                player.shoot()
+                break;
+            case "ShiftLeft":
+                console.log("Triggered!")
+                for (let i = 0; i < 9; i++) {
+                    let x = Math.floor(player.checkpoints[i].x / 64);
+                    let y = Math.floor(player.checkpoints[i].y / 64);
 
-        if (key == "ShiftLeft") {
-            console.log("Triggered!")
-            for (let i = 6; i < 9; i++) {
-                let x = Math.floor(player.checkpoints[i].x / 64);
-                let y = Math.floor(player.checkpoints[i].y / 64);
-
-                for (let tile of gameRoom.level) {
-                    if (lRef.tiles[tile[0]].type == "vent" && tile[1] == x && tile[2] == y) {
-                        for (let tile of gameRoom.level) if (lRef.tiles[tile[0]].type == "vent" && !(tile[1] == x) && !(tile[2] == y)) {
-                            console.log (x,y)
-                            console.log(tile[1], tile[2])
-                            player.x = tile[1]*64;
-                            player.y = tile[2]*64+16;
-                            player.speed = 0;
+                    for (let tile of gameRoom.level) {
+                        if (lRef.tiles[tile[0]].type == "vent" && tile[1] == x && tile[2] == y) {
+                            for (let tile of gameRoom.level) if (lRef.tiles[tile[0]].type == "vent" && !(tile[1] == x) && !(tile[2] == y)) {
+                                console.log(x, y)
+                                console.log(tile[1], tile[2])
+                                player.x = tile[1] * 64;
+                                player.y = tile[2] * 64 + 16;
+                            }
                         }
                     }
-                }
 
-            }
+                }
+                break;
         }
 
     }
@@ -787,42 +817,57 @@ gameRoom.kD = (key) => {
             pause = !pause
         }
         if (pause) {
-            if (key == "ArrowUp"||key == "KeyW") {
-                gameRoom.pses -= 1
-                if (gameRoom.pses < 0) {
-                    gameRoom.pses = gameRoom.pseo.length-1
-                }
-            }
-            if (key == "ArrowDown"||key == "KeyS") {
-                gameRoom.pses += 1
-                if (gameRoom.pses > gameRoom.pseo.length-1) {
-                    gameRoom.pses = 0
-                }
-            }
-            if (key == "Space" || key == "Enter") {
-                pause = 0;
-                gameRoom.tutorial = 0;
-                gameRoom.pseo[gameRoom.pses].a()
+            switch (key) {
+                case "ArrowUp":
+                case "KeyW":
+                    gameRoom.pses -= 1
+                    if (gameRoom.pses < 0) {
+                        gameRoom.pses = gameRoom.pseo.length - 1
+                    }
+                    beep();
+                    break;
+                case "ArrowDown":
+                case "KeyS":
+                    gameRoom.pses += 1
+                    if (gameRoom.pses > gameRoom.pseo.length - 1) {
+                        gameRoom.pses = 0
+                    }
+                    beep();
+                    break;
+                case "Space":
+                case "Enter":
+                    pause = 0;
+                    gameRoom.tutorial = 0;
+                    gameRoom.pseo[gameRoom.pses].a()
+                    break;
             }
         }
     }
     if (gameRoom.finish) {
-        if (key == "ArrowUp"||key == "KeyW") {
-            gameRoom.s -= 1
-            if (gameRoom.s < 0) {
-                gameRoom.s = gameRoom.o.length-1
-            }
-        }
-        if (key == "ArrowDown"||key == "KeyS") {
-            gameRoom.s += 1
-            if (gameRoom.s > gameRoom.o.length-1) {
-                gameRoom.s = 0
-            }
-        }
-        if (key == "Space" || key == "Enter") {
-            gameRoom.finish = 0;
-            gameRoom.tutorial = 0;
-            gameRoom.o[gameRoom.s].a();
+        switch (key) {
+            case "ArrowUp":
+            case "KeyW":
+                gameRoom.s -= 1
+                if (gameRoom.s < 0) {
+                    gameRoom.s = gameRoom.o.length - 1
+                }
+                beep();
+                break;
+            case "ArrowDown":
+            case "KeyS":
+                gameRoom.s += 1
+                if (gameRoom.s > gameRoom.o.length - 1) {
+                    gameRoom.s = 0
+                }
+                beep();
+                break;
+
+            case "Space":
+            case "Enter":
+                gameRoom.finish = 0;
+                gameRoom.tutorial = 0;
+                gameRoom.o[gameRoom.s].a();
+                break;
         }
     }
 }
@@ -859,11 +904,11 @@ gameRoom.click = (e) => {
     player.shoot();
     }
 }
-gameRoom.checkwall = (tx,ty) => {
+gameRoom.checktile = (tx, ty, tp) => {
     tx = Math.floor(tx);
     ty = Math.floor(ty);
     for (let tile of gameRoom.level) {
-        if (lRef.tiles[tile[0]].type == "wall" && tile[1] == tx && tile[2] == ty) {
+        if (lRef.tiles[tile[0]].type == tp && tile[1] == tx && tile[2] == ty) {
             return true;
         }
     }
@@ -890,9 +935,9 @@ gameRoom.start = () =>{
 
 
     if (gameRoom.tutorial) {
-        player.accel = .8
+        player.accel = .05
     } else {
-        player.accel = 1.5
+        player.accel = .1
 
     }
 
@@ -904,7 +949,7 @@ gameRoom.start = () =>{
         }
         if(tile[0]===10){
 
-            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), img.i.human)
+            let pooman = new Entity("Human", (tile[1]*64),(tile[2]*64), img.human)
             pooman.w = 26*2
             pooman.h = 16*2
             pooman.bh = Math.floor(Math.random()*3);
@@ -931,7 +976,7 @@ gameRoom.start = () =>{
                         pooman.x -= pooman.h;
                     }
                     pooman.getT();
-                    if (gameRoom.checkwall(pooman.tX, pooman.tY)){
+                    if (gameRoom.checktile(pooman.tX, pooman.tY)){
                         pooman.x = xy[0]
                         pooman.y = xy[1]
                         pooman.step()
@@ -1013,7 +1058,7 @@ gameRoom.dGUI = _=>{
         for (let o in gameRoom.o) {
             let t = c.dT(gameRoom.o[o].t, c.w/2+c.cam.x, c.h/2+(o*9)+c.cam.y, 1,1,"#fff", "middle");
             if (o == gameRoom.s) {
-                let a = img.i.a;
+                let a = img.a;
                 c.dImg(a, ((c.w/2+c.cam.x)-t.w/2)-8, c.h/2+(o*9)+c.cam.y, 6,7)
             }
         }
@@ -1138,28 +1183,40 @@ lvlS.dGUI = () => {
 }
 
 lvlS.kD = (key) => {
-    if (key == "ArrowUp"||key=="ArrowRight"||key == "KeyW"||key=="KeyD") {
-        lvlS.s -= 1
-        if (lvlS.s < 0) {
-            lvlS.s = lvlS.o.length-1
-        }
-    }
-    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyS"|| key == "KeyA") {
-        lvlS.s += 1
-        if (lvlS.s > lvlS.o.length-1) {
-            lvlS.s = 0
-        }
-    }
-    if (key == "Space" || key == "Enter") {
-        gameRoom.li = lvlS.s+1;
-        if (lvlS.s === 0){
-            gameRoom.tutorial = 1;
-        }
-        setRoom(2)
-    }
-    if (key == "KeyE") {
-        editor.l = JSON.parse(lzs.decompressFromEncodedURIComponent(lvlS.o[lvlS.s].data));
-        setRoom(3)
+    switch (key) {
+        case "ArrowUp":
+        case "ArrowLeft":
+        case "KeyW":
+        case "KeyA":
+            lvlS.s -= 1
+            if (lvlS.s < 0) {
+                lvlS.s = lvlS.o.length - 1
+            }
+            beep();
+            break;
+        case "ArrowDown":
+        case "ArrowRight":
+        case "KeyS":
+        case "KeyD":
+            lvlS.s += 1
+            if (lvlS.s > lvlS.o.length - 1) {
+                lvlS.s = 0
+            }
+            beep();
+            break;
+        case "Space":
+        case "Enter":
+            gameRoom.li = lvlS.s + 1;
+            if (lvlS.s === 0) {
+                gameRoom.tutorial = 1;
+            }
+            setRoom(2)
+            // beep();
+            break;
+        case "KeyE":
+            editor.l = JSON.parse(lzs.decompressFromEncodedURIComponent(lvlS.o[lvlS.s].data));
+            setRoom(3)
+            break;
     }
 }
 
@@ -1181,7 +1238,7 @@ options.dGUI = () => {
         let s = options.o[o]
         let txt = c.dT(`${options.o[o].t}`, 150, 50+(o*20), 2,2,"#fff","left","top");
         if (options.s == o) {
-            let a = img.i.a;
+            let a = img.a;
             c.dImg(a, 136, 50 + (o * 20), a.width * 2, a.height * 2)
         }
         let v = options.ops[s.v]
@@ -1193,22 +1250,31 @@ options.dGUI = () => {
 }
 
 options.kD = (key) => {
-    if (key == "ArrowUp"||key=="ArrowRight"||key == "KeyW") {
-        options.s -= 1
-        if (options.s < 0) {
-            options.s = options.o.length-1
-        }
-    }
-    if (key == "ArrowDown" ||key=="ArrowLeft"||key == "KeyS") {
-        options.s += 1
-        if (options.s > options.o.length-1) {
-            options.s = 0
-        }
-    }
-    if (key == "Space" || key == "Enter") {
-        if (options.o[options.s].a){
-            options.o[options.s].a()
-        }
+    switch (key) {
+        case "ArrowUp":
+        case "ArrowRight":
+        case "KeyW":
+            options.s -= 1
+            if (options.s < 0) {
+                options.s = options.o.length - 1
+            }
+            beep();
+            break;
+        case "ArrowDown":
+        case "ArrowLeft":
+        case "KeyS":
+            options.s += 1
+            if (options.s > options.o.length - 1) {
+                options.s = 0
+            }
+            beep();
+            break;
+        case "Space":
+        case "Enter":
+            if (options.o[options.s].a) {
+                options.o[options.s].a()
+            }
+            break;
     }
 }
 
@@ -1312,10 +1378,10 @@ try {
         switch (cRoom.name) {
             case "menu":
             case "Editor":
-                c.ctx.drawImage(img.i.cursor, Math.round(mse.x), Math.round(mse.y), img.i.cursor.width*2, img.i.cursor.height*2);
+                c.ctx.drawImage(img.cursor, Math.round(mse.x), Math.round(mse.y), img.cursor.width*2, img.cursor.height*2);
                 break;
             case "Game":
-                c.ctx.drawImage(img.i.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
+                c.ctx.drawImage(img.ingame, Math.round(mse.x)-16, Math.round(mse.y)-16, 32, 32);
                 break;
         }
         lastTime = Date.now();
