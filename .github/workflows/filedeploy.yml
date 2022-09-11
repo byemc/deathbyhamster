@@ -31,7 +31,7 @@ jobs:
           directory: .
           add_suffix: false
       - name: Install minification dependencies
-        run: python3 -m pip install -r requirements.txt && node i tensify
+        run: python3 -m pip install -r requirements.txt && npm i tensify
       - name: minify
         run: python3 main.py
       - name: Install SSH Key
